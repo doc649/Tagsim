@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:contacts_service/contacts_service.dart';
+import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:share_plus/share_plus.dart'; // Importer Share Plus
 import 'package:smart_sim_dz/models/contact_with_operator.dart';
@@ -48,7 +48,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _initializeScreen() async {
     await _loadPreferences();
-    await _requestContactsPermission();
+    // La permission est demandée dans _loadAndProcessContacts avec flutter_contacts
+    await _loadAndProcessContacts();
     if (!_isPremium) {
       _loadBannerAd();
     }
@@ -109,33 +110,32 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _requestContactsPermission() async {
-    if (!mounted) return;
-    setState(() { _isLoading = true; });
-    final status = await Permission.contacts.request();
-    if (!mounted) return;
-    if (status.isGranted) {
-      setState(() {
-        _permissionDenied = false;
-      });
-      await _loadAndProcessContacts();
-    } else {
-      setState(() {
-        _permissionDenied = true;
-        _isLoading = false;
-      });
-    }
-  }
+  // Note: La demande de permission est maintenant intégrée dans _loadAndProcessContacts
+  // Future<void> _requestContactsPermission() async { ... }
 
   Future<void> _loadAndProcessContacts() async {
+    if (!mounted) return;
+    setState(() { _isLoading = true; });
     try {
-      final Iterable<Contact> contacts = await ContactsService.getContacts(withThumbnails: false);
+      // Demander la permission si ce n'est pas déjà fait (flutter_contacts le gère aussi, mais double vérification)
+      if (!await FlutterContacts.requestPermission(readonly: true)) {
+        if (mounted) {
+          setState(() {
+            _permissionDenied = true;
+            _isLoading = false;
+          });
+        }
+        return;
+      }
+
+      // Récupérer les contacts avec les numéros de téléphone
+      final List<Contact> contacts = await FlutterContacts.getContacts(withProperties: true, withPhoto: false);
       if (!mounted) return;
+
       List<ContactWithOperator> processed = [];
       for (var contact in contacts) {
-        String? phoneNumber = (contact.phones != null && contact.phones!.isNotEmpty)
-            ? contact.phones!.first.value
-            : null;
+        // Prendre le premier numéro de téléphone s'il existe
+        String? phoneNumber = contact.phones.isNotEmpty ? contact.phones.first.number : null;
 
         Operator operator = Operator.unknown;
         if (phoneNumber != null) {
@@ -149,13 +149,15 @@ class _HomeScreenState extends State<HomeScreen> {
         ));
       }
 
-      processed.sort((a, b) => (a.contact.displayName ?? "").toLowerCase().compareTo((b.contact.displayName ?? "").toLowerCase()));
+      // Trier les contacts par nom d'affichage
+      processed.sort((a, b) => (a.contact.displayName).toLowerCase().compareTo((b.contact.displayName).toLowerCase()));
 
       if (mounted) {
         setState(() {
           _processedContacts = processed;
           _filteredContacts = processed;
           _isLoading = false;
+          _permissionDenied = false; // Assurer que permissionDenied est false si on arrive ici
         });
       }
     } catch (e) {
@@ -163,6 +165,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) {
         setState(() {
           _isLoading = false;
+          // On pourrait considérer _permissionDenied = true ici aussi si l'erreur est liée aux permissions
         });
       }
     }
@@ -173,7 +176,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (mounted) {
       setState(() {
         _filteredContacts = _processedContacts.where((c) {
-          final name = c.contact.displayName?.toLowerCase() ?? '';
+          final name = c.contact.displayName.toLowerCase();
           final phone = c.primaryPhoneNumber?.toLowerCase() ?? '';
           return name.contains(query) || phone.contains(query);
         }).toList();
@@ -213,7 +216,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // TODO: Remplacer par le vrai lien de l'application une fois publiée
     const String appLink = "https://play.google.com/store/apps/details?id=com.example.smart_sim_dz"; // Placeholder
     const String message = "Découvrez Smart SIM DZ, l'application qui vous aide à choisir la bonne SIM pour appeler en Algérie et économiser ! Téléchargez-la ici : $appLink";
-    Share.share(message);
+    Share.share(message) ;
   }
 
   @override
@@ -298,7 +301,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     itemCount: _filteredContacts.length,
                     itemBuilder: (context, index) {
                       final item = _filteredContacts[index];
-                      final contactName = item.contact.displayName ?? 'Nom inconnu';
+                      final contactName = item.contact.displayName;
                       final phoneNumber = item.primaryPhoneNumber ?? 'Numéro inconnu';
                       final operator = item.operator;
                       final recommendedSim = _getRecommendedSimSlot(operator);
@@ -385,7 +388,8 @@ class _HomeScreenState extends State<HomeScreen> {
               ElevatedButton.icon(
                 icon: const Icon(Icons.settings),
                 label: const Text('Ouvrir les paramètres'),
-                onPressed: openAppSettings,
+                // Utiliser FlutterContacts pour ouvrir les paramètres si la permission est définitivement refusée
+                onPressed: () => FlutterContacts.openExternalSettings(),
               ),
             ],
           ),
@@ -393,4 +397,3 @@ class _HomeScreenState extends State<HomeScreen> {
       );
   }
 }
-

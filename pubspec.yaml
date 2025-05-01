@@ -13,7 +13,7 @@ dependencies:
 
   cupertino_icons: ^1.0.6
   permission_handler: ^11.3.1 # Pour gérer les permissions (contacts)
-  contacts_service: ^0.6.3   # Pour accéder aux contacts
+  flutter_contacts: ^1.1.9   # Pour accéder aux contacts (remplace contacts_service)
   url_launcher: ^6.3.0       # Pour rediriger vers l'application d'appel
   google_mobile_ads: ^5.1.0 # Pour AdMob
   in_app_purchase: ^3.2.0    # Pour les achats in-app (version premium)
@@ -37,4 +37,3 @@ flutter:
   #   - family: Schyler
   #     fonts:
   #       - asset: fonts/Schyler-Regular.ttf
-

@@ -1,4 +1,4 @@
-import 'package:contacts_service/contacts_service.dart';
+﻿import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:smart_sim_dz/utils/operator_detector.dart';
 
 // Classe pour encapsuler un contact et son opérateur détecté
@@ -13,4 +13,3 @@ class ContactWithOperator {
     this.primaryPhoneNumber,
   });
 }
-
