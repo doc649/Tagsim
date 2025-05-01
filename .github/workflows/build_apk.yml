@@ -1,0 +1,37 @@
+name: Build Flutter APK
+
+on:
+  push:
+    branches:
+      - main # Déclenche la compilation à chaque push sur la branche main
+  workflow_dispatch: # Permet de lancer la compilation manuellement depuis l'onglet Actions de GitHub
+
+jobs:
+  build:
+    runs-on: ubuntu-latest # Utilise une machine virtuelle Linux récente
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4 # Récupère votre code depuis GitHub
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17' # Installe Java 17 nécessaire pour Android
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable' # Utilise la version stable de Flutter
+
+      - name: Install Flutter dependencies
+        run: flutter pub get # Installe les dépendances du projet
+
+      - name: Build APK Release
+        run: flutter build apk --release # Compile l'APK en mode release
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk # Nom de l'artefact qui contiendra l'APK
+          path: build/app/outputs/flutter-apk/app-release.apk # Chemin vers l'APK compilé
