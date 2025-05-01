@@ -389,7 +389,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 icon: const Icon(Icons.settings),
                 label: const Text('Ouvrir les paramètres'),
                 // Utiliser FlutterContacts pour ouvrir les paramètres si la permission est définitivement refusée
-                onPressed: () => FlutterContacts.openExternalSettings(),
+                onPressed: () => openAppSettings(), // Utilise permission_handler
               ),
             ],
           ),
