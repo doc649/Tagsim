@@ -1,0 +1,40 @@
+name: smart_sim_dz
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.4.3 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.6
+  permission_handler: ^11.3.1 # Pour gérer les permissions (contacts)
+  contacts_service: ^0.6.3   # Pour accéder aux contacts
+  url_launcher: ^6.3.0       # Pour rediriger vers l'application d'appel
+  google_mobile_ads: ^5.1.0 # Pour AdMob
+  in_app_purchase: ^3.2.0    # Pour les achats in-app (version premium)
+  share_plus: ^9.0.0         # Pour le bouton de partage
+  shared_preferences: ^2.2.3 # Pour sauvegarder les préférences (config SIM)
+  # Ajouter d'autres dépendances si nécessaire
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+
+  # assets:
+  #   - images/a_dot_burr.jpeg
+
+  # fonts:
+  #   - family: Schyler
+  #     fonts:
+  #       - asset: fonts/Schyler-Regular.ttf
+
