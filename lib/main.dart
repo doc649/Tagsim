@@ -1,41 +1,31 @@
 import 'package:flutter/material.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart'; // Importer AdMob
-import 'package:smart_sim_dz/screens/home_screen.dart';
+import 'package:tagsim/screens/home_screen.dart'; // Import the HomeScreen
 
 void main() {
-  // Assurer l'initialisation des Widgets Flutter
-  WidgetsFlutterBinding.ensureInitialized();
-  // Initialiser le SDK Mobile Ads
-  MobileAds.instance.initialize();
-
-  runApp(const MyApp());
+  runApp(const TagSimApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class TagSimApp extends StatelessWidget {
+  const TagSimApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Smart SIM DZ',
+      title: 'TagSim',
       theme: ThemeData(
-        brightness: Brightness.dark, // Thème sombre
-        primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-        // Personnaliser d'autres aspects du thème sombre si nécessaire
-        scaffoldBackgroundColor: Colors.grey[900],
-        appBarTheme: AppBarTheme(
-          backgroundColor: Colors.grey[850],
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blue, // Using blue as the primary seed color
+          brightness: Brightness.light, // Or Brightness.dark based on preference/system
         ),
-        cardColor: Colors.grey[850],
-        inputDecorationTheme: InputDecorationTheme(
-          fillColor: Colors.grey[800],
-          // Définir d'autres styles pour les champs de texte
+        useMaterial3: true, // Enabling Material 3
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.blue, // Example: Blue app bar
+          foregroundColor: Colors.white, // Example: White text/icons on app bar
         ),
-        // etc.
+        // Add other theme properties as needed
       ),
-      home: const HomeScreen(),
-      debugShowCheckedModeBanner: false, // Masquer la bannière de débogage
+      home: const HomeScreen(), // Use HomeScreen as the home page
+      debugShowCheckedModeBanner: false, // Optional: Remove debug banner
     );
   }
 }

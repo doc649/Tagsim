@@ -1,4 +1,4 @@
-﻿name: smart_sim_dz
+﻿name: tagsim
 description: "A new Flutter project."
 publish_to: 'none'
 
@@ -19,7 +19,8 @@ dependencies:
   in_app_purchase: ^3.2.0    # Pour les achats in-app (version premium)
   share_plus: ^9.0.0         # Pour le bouton de partage
   shared_preferences: ^2.2.3 # Pour sauvegarder les préférences (config SIM)
-  # Ajouter d'autres dépendances si nécessaire
+  libphonenumber_plugin: ^0.3.3 # Pour analyser les numéros et obtenir le pays
+  emoji_flag_converter: ^1.0.2 # Pour convertir code pays en drapeau emoji
 
 dev_dependencies:
   flutter_test:
