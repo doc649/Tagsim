@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tagsim/screens/contacts_screen.dart';
-import 'package:tagsim/screens/call_log_screen.dart';
+import 'package:tagsim/screens/call_log_screen.dart'; // To be created
+import 'package:tagsim/screens/ussd_codes_screen.dart'; // To be created
 import 'package:tagsim/screens/settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -12,10 +13,13 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+
+  // Define the screens for each tab
   static const List<Widget> _widgetOptions = <Widget>[
-    ContactsScreen(), // Placeholder for Contacts Screen
-    CallLogScreen(),   // Placeholder for Call Log Screen
-    SettingsScreen(), // Placeholder for Settings Screen
+    ContactsScreen(),
+    CallLogScreen(), // Placeholder for Call Log
+    UssdCodesScreen(), // Placeholder for USSD Codes
+    SettingsScreen(),
   ];
 
   void _onItemTapped(int index) {
@@ -26,27 +30,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Determine the title based on the selected index
-    String appBarTitle;
-    switch (_selectedIndex) {
-      case 0:
-        appBarTitle = 'Contacts';
-        break;
-      case 1:
-        appBarTitle = 'Call Log';
-        break;
-      case 2:
-        appBarTitle = 'Settings';
-        break;
-      default:
-        appBarTitle = 'TagSim';
-    }
-
     return Scaffold(
-      appBar: AppBar(
-        title: Text(appBarTitle),
-        // Potentially add actions like search here later
-      ),
+      // AppBar might be removed or adapted depending on screen content
+      // appBar: AppBar(
+      //   title: const Text('TagSim'),
+      // ),
       body: Center(
         child: _widgetOptions.elementAt(_selectedIndex),
       ),
@@ -58,16 +46,23 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.call),
-            label: 'Call Log',
+            label: 'Journal',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.dialpad),
+            label: 'USSD',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
-            label: 'Settings',
+            label: 'Paramètres',
           ),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: Theme.of(context).colorScheme.primary, // Use primary blue color
-        unselectedItemColor: Colors.grey, // Or another suitable color
+        // Use fixed type for more than 3 items to keep labels visible
+        type: BottomNavigationBarType.fixed,
+        // Use theme colors for selected/unselected items
+        selectedItemColor: Theme.of(context).primaryColor,
+        unselectedItemColor: Colors.grey,
         onTap: _onItemTapped,
       ),
     );

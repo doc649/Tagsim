@@ -16,14 +16,24 @@ class ContactsScreen extends StatefulWidget {
 }
 
 class _ContactsScreenState extends State<ContactsScreen> {
-  List<ContactWithDetails> _contactsWithDetails = [];
+  List<ContactWithDetails> _allContactsWithDetails = []; // Store all contacts
+  List<ContactWithDetails> _filteredContactsWithDetails = []; // Store filtered contacts
   bool _permissionDenied = false;
   bool _isLoading = true;
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _fetchContacts();
+    _searchController.addListener(_filterContacts);
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_filterContacts);
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchContacts() async {
@@ -50,25 +60,24 @@ class _ContactsScreenState extends State<ContactsScreen> {
                 AlgerianMobileOperator operator = AlgerianMobileOperator.Unknown;
 
                 try {
-                  // Corrected: Use RegionInfo type and access isoCode directly
-                  RegionInfo? regionInfo = await phone_util.PhoneNumberUtil.getRegionInfo(phoneNumber, '');
-
+                  // Use default region 'DZ' as a hint for Algerian numbers
+                  RegionInfo? regionInfo = await phone_util.PhoneNumberUtil.getRegionInfo(phoneNumber, 'DZ');
                   if (regionInfo != null && regionInfo.isoCode != null) {
                     countryCode = regionInfo.isoCode;
                     flagEmoji = emoji_converter.EmojiConverter.fromAlpha2CountryCode(countryCode!);
-
                     if (countryCode == 'DZ') {
                       operator = OperatorDetector.detectOperator(phoneNumber);
                     }
                   }
                 } catch (e) {
                   print('Error getting region info for phone number $phoneNumber: $e');
+                  // Fallback for numbers not parsable by libphonenumber but potentially Algerian
                   if (phoneNumber.startsWith('+213') || phoneNumber.startsWith('00213') || phoneNumber.startsWith('0')) {
-                    operator = OperatorDetector.detectOperator(phoneNumber);
-                    if (operator != AlgerianMobileOperator.Unknown) {
-                      countryCode = 'DZ';
-                      flagEmoji = emoji_converter.EmojiConverter.fromAlpha2CountryCode('DZ');
-                    }
+                     operator = OperatorDetector.detectOperator(phoneNumber);
+                     if (operator != AlgerianMobileOperator.Unknown) {
+                       countryCode = 'DZ';
+                       flagEmoji = emoji_converter.EmojiConverter.fromAlpha2CountryCode('DZ');
+                     }
                   }
                 }
 
@@ -83,10 +92,11 @@ class _ContactsScreenState extends State<ContactsScreen> {
             }
           }
         }
-        processedContacts.sort((a, b) => a.contact.displayName.compareTo(b.contact.displayName));
+        processedContacts.sort((a, b) => a.contact.displayName.toLowerCase().compareTo(b.contact.displayName.toLowerCase()));
 
         setState(() {
-          _contactsWithDetails = processedContacts;
+          _allContactsWithDetails = processedContacts;
+          _filteredContactsWithDetails = processedContacts; // Initially show all
           _isLoading = false;
         });
       } catch (e) {
@@ -103,13 +113,83 @@ class _ContactsScreenState extends State<ContactsScreen> {
     }
   }
 
+  void _filterContacts() {
+    String query = _searchController.text.toLowerCase();
+    setState(() {
+      _filteredContactsWithDetails = _allContactsWithDetails.where((details) {
+        final nameMatch = details.contact.displayName.toLowerCase().contains(query);
+        final numberMatch = details.phoneNumber?.toLowerCase().contains(query) ?? false;
+        return nameMatch || numberMatch;
+      }).toList();
+    });
+  }
+
+  // Helper function to get logo path
+  String? _getOperatorLogoPath(AlgerianMobileOperator operator) {
+    switch (operator) {
+      case AlgerianMobileOperator.Djezzy:
+        return 'assets/logos/djezzy_logo.png';
+      case AlgerianMobileOperator.Mobilis:
+        return 'assets/logos/mobilis_logo.png';
+      case AlgerianMobileOperator.Ooredoo:
+        return 'assets/logos/ooredoo_logo.png';
+      case AlgerianMobileOperator.Unknown:
+      default:
+        return null;
+    }
+  }
+
+  // Helper function to launch URL (call or SMS)
+  Future<void> _launchUniversalLink(Uri url) async {
+    try {
+      final bool nativeAppLaunchSucceeded = await launchUrl(
+        url,
+        mode: LaunchMode.externalNonBrowserApplication,
+      );
+      if (!nativeAppLaunchSucceeded) {
+        await launchUrl(
+          url,
+          mode: LaunchMode.externalApplication,
+        );
+      }
+    } catch (e) {
+      print('Could not launch $url: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Impossible de lancer l\'action pour ${url.scheme}')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Contacts'),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(kToolbarHeight),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Rechercher des contacts...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(25.0),
+                  borderSide: BorderSide.none,
+                ),
+                filled: true,
+                contentPadding: EdgeInsets.zero,
+                fillColor: Theme.of(context).colorScheme.surfaceVariant, // Use theme color
+              ),
+            ),
+          ),
+        ),
+      ),
       body: _buildBody(),
       floatingActionButton: FloatingActionButton(
         onPressed: _fetchContacts,
-        tooltip: 'Refresh Contacts',
+        tooltip: 'Rafraîchir les contacts',
         child: const Icon(Icons.refresh),
       ),
     );
@@ -128,17 +208,17 @@ class _ContactsScreenState extends State<ContactsScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Text(
-                'Permission to access contacts was denied.',
+                'Permission d\'accès aux contacts refusée.',
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: openAppSettings,
-                child: const Text('Open App Settings'),
+                child: const Text('Ouvrir les paramètres'),
               ),
               ElevatedButton(
                 onPressed: _fetchContacts,
-                child: const Text('Retry'),
+                child: const Text('Réessayer'),
               ),
             ],
           ),
@@ -146,38 +226,67 @@ class _ContactsScreenState extends State<ContactsScreen> {
       );
     }
 
-    if (_contactsWithDetails.isEmpty) {
-      return const Center(child: Text('No contacts found.'));
+    if (_allContactsWithDetails.isEmpty) {
+      return const Center(child: Text('Aucun contact trouvé.'));
+    }
+
+    if (_filteredContactsWithDetails.isEmpty && _searchController.text.isNotEmpty) {
+       return const Center(child: Text('Aucun contact ne correspond à votre recherche.'));
     }
 
     return ListView.builder(
-      itemCount: _contactsWithDetails.length,
+      itemCount: _filteredContactsWithDetails.length,
       itemBuilder: (context, index) {
-        final details = _contactsWithDetails[index];
+        final details = _filteredContactsWithDetails[index];
         final contact = details.contact;
-        final operatorName = OperatorDetector.getOperatorName(details.operatorInfo);
-        final operatorColor = OperatorDetector.getOperatorColor(details.operatorInfo);
+        final logoPath = _getOperatorLogoPath(details.operatorInfo);
+        final phoneNumber = details.phoneNumber;
 
         return ListTile(
-          title: Text(contact.displayName.isNotEmpty ? contact.displayName : '(No name)'),
+          title: Text(contact.displayName.isNotEmpty ? contact.displayName : '(Sans nom)'),
           subtitle: Row(
             children: [
               if (details.countryFlagEmoji != null)
                 Padding(
                   padding: const EdgeInsets.only(right: 4.0),
-                  child: Text(details.countryFlagEmoji!),
+                  child: Text(details.countryFlagEmoji!, style: const TextStyle(fontSize: 16)), // Slightly larger flag
                 ),
-              Expanded(child: Text(details.phoneNumber ?? 'No number')),
-              if (details.operatorInfo != AlgerianMobileOperator.Unknown)
+              Expanded(child: Text(phoneNumber ?? 'Pas de numéro')),
+              if (logoPath != null)
                 Padding(
                   padding: const EdgeInsets.only(left: 8.0),
-                  child: Text(
-                    operatorName,
-                    style: TextStyle(color: operatorColor, fontWeight: FontWeight.bold, fontSize: 12),
+                  child: Image.asset(
+                    logoPath,
+                    height: 16, // Adjust height as needed
+                    errorBuilder: (context, error, stackTrace) => const Icon(Icons.error, size: 16), // Fallback icon
                   ),
                 ),
             ],
           ),
+          trailing: phoneNumber != null
+              ? Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.call),
+                      tooltip: 'Appeler',
+                      onPressed: () {
+                        final Uri callUri = Uri(scheme: 'tel', path: phoneNumber);
+                        _launchUniversalLink(callUri);
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.message),
+                      tooltip: 'Envoyer SMS',
+                      onPressed: () {
+                        final Uri smsUri = Uri(scheme: 'sms', path: phoneNumber);
+                        _launchUniversalLink(smsUri);
+                      },
+                    ),
+                  ],
+                )
+              : null,
+          // TODO: Add onTap for contact details screen
         );
       },
     );
