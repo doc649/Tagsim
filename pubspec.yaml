@@ -33,6 +33,7 @@ flutter:
 
   assets:
     - assets/logos/
+    - assets/ussd_data.json
 
   # fonts:
   #   - family: Schyler

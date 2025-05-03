@@ -1,0 +1,103 @@
+[
+  {
+    "operator": "Mobilis",
+    "categories": [
+      {
+        "name": "Solde & Recharge",
+        "codes": [
+          {"description": "Consulter crédit & quota internet", "code": "*222#"},
+          {"description": "Recharger (carte)", "code": "*111*{CODE}#"}
+        ]
+      },
+      {
+        "name": "Services",
+        "codes": [
+          {"description": "Mon numéro", "code": "*101#"},
+          {"description": "Notification appels manqués (éteint/hors ligne)", "code": "*21*644#"},
+          {"description": "Annuler renvoi d'appel", "code": "*21#"},
+          {"description": "Kelemni (Rappelle-moi)", "code": "*606*{NUMERO}#"},
+          {"description": "Sellekni (Transfert crédit)", "code": "*610*{NUMERO}*{MONTANT}*{CODE_SECRET}#"},
+          {"description": "Masquer numéro (appel unique)", "code": "#31#{NUMERO}"},
+          {"description": "Activer appel en attente", "code": "*43#"},
+          {"description": "Désactiver appel en attente", "code": "#43#"}
+        ]
+      },
+      {
+        "name": "Offres",
+        "codes": [
+          {"description": "Accès offres & forfaits (prépayé)", "code": "*600#"}
+        ]
+      }
+    ]
+  },
+  {
+    "operator": "Djezzy",
+    "categories": [
+      {
+        "name": "Solde & Recharge",
+        "codes": [
+          {"description": "Consultation crédit (Payant: 5 Da)", "code": "710"}
+        ]
+      },
+      {
+        "name": "Services",
+        "codes": [
+          {"description": "Service Client Particulier", "code": "777"},
+          {"description": "Menu Général Prépayé", "code": "700"},
+          {"description": "Service Client Distributeur", "code": "401"},
+          {"description": "Service Client IMTIYAZ", "code": "444"},
+          {"description": "Info Facture (Post-payé)", "code": "787"},
+          {"description": "Service Client Entreprise", "code": "788"},
+          {"description": "Qerius (Annuaire)", "code": "718"},
+          {"description": "Tranquilo / SMS Bip (Crédit urgence)", "code": "*100#"}
+        ]
+      },
+      {
+        "name": "Offres",
+        "codes": [
+          {"description": "Choix offre/profil (Payant: 25 Da)", "code": "*720#"}
+        ]
+      }
+    ]
+  },
+  {
+    "operator": "Ooredoo",
+    "categories": [
+      {
+        "name": "Solde & Recharge",
+        "codes": [
+          {"description": "Consulter solde", "code": "*102#"},
+          {"description": "Recharger", "code": "111*{CODE}#"}
+        ]
+      },
+      {
+        "name": "Données & Offres",
+        "codes": [
+          {"description": "Consulter solde données", "code": "*113#"},
+          {"description": "Offres données", "code": "*117#"},
+          {"description": "Offres appels", "code": "*120#"}
+        ]
+      },
+      {
+        "name": "Services",
+        "codes": [
+          {"description": "Menu principal", "code": "*100#"},
+          {"description": "Rappelle-moi", "code": "*151#"},
+          {"description": "Services Ooredoo", "code": "*153#"},
+          {"description": "Itinérance (Roaming)", "code": "*155#"}
+        ]
+      },
+      {
+        "name": "Renvoi d'appel",
+        "codes": [
+          {"description": "Activer (Occupé)", "code": "*62*{NUMERO}#"},
+          {"description": "Activer (Pas de réponse)", "code": "*61*{NUMERO}#"},
+          {"description": "Activer (Inaccessible)", "code": "*67*{NUMERO}#"},
+          {"description": "Désactiver (Occupé)", "code": "##62#"},
+          {"description": "Désactiver (Pas de réponse)", "code": "##61#"},
+          {"description": "Désactiver (Inaccessible)", "code": "##67#"}
+        ]
+      }
+    ]
+  }
+]
