@@ -26,22 +26,23 @@ jobs:
         with:
           channel: 'stable' # Use stable channel, or match project's channel
 
-      # Set up Node.js to use patch-package
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20' # Or a version compatible with patch-package
-
       - name: Install Flutter dependencies
         run: flutter pub get
 
-      # Install Node.js dependencies (including patch-package)
-      - name: Install Node dependencies
-        run: npm install
-
-      # Apply patches using patch-package
-      - name: Apply patches
-        run: npx patch-package --patch-dir patches
+      # Apply patch to call_log using standard patch command
+      - name: Apply patch to call_log
+        run: |
+          # Find the call_log build.gradle file path
+          CALL_LOG_BUILD_GRADLE=$(find $HOME/.pub-cache/hosted/pub.dev/call_log-4.0.0* -name build.gradle | head -n 1)
+          if [ -z "$CALL_LOG_BUILD_GRADLE" ]; then
+            echo "Error: call_log build.gradle not found in .pub-cache"
+            exit 1
+          fi
+          echo "Applying patch to $CALL_LOG_BUILD_GRADLE"
+          # Apply the patch (ensure patch file uses relative paths or is applied from correct dir)
+          # Assuming the patch was created relative to the package root, we apply it from there
+          # However, our patch was created with full paths, let's try applying directly
+          patch "$CALL_LOG_BUILD_GRADLE" < patches/call_log+4.0.0.patch
 
       # Optional: Run tests
       # - name: Run tests
