@@ -4,8 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dynamic_color/dynamic_color.dart'; // Import dynamic_color
 
 // Define default ColorSchemes (can be customized)
-const _defaultLightColorScheme = ColorScheme.fromSeed(seedColor: Colors.deepPurple);
-const _defaultDarkColorScheme = ColorScheme.fromSeed(
+final _defaultLightColorScheme = ColorScheme.fromSeed(seedColor: Colors.deepPurple);
+final _defaultDarkColorScheme = ColorScheme.fromSeed(
   seedColor: Colors.deepPurple,
   brightness: Brightness.dark,
 );
