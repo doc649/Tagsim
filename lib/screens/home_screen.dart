@@ -18,7 +18,8 @@ class _HomeScreenState extends State<HomeScreen> {
   // Define the screens for each tab - must be initialized dynamically if passing parameters
   late final List<Widget> _widgetOptions;
 
-  // Define titles for each screen  static const List<String> _appBarTitles = <String>[
+  // Define titles for each screen
+  static const List<String> _appBarTitles = <String>[
     'Contacts',
     'Codes USSD',
     'Paramètres',
