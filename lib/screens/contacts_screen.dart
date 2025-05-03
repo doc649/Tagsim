@@ -23,7 +23,6 @@ class _ContactsScreenState extends State<ContactsScreen> {
   bool _permissionDenied = false;
   bool _isLoading = true;
   final TextEditingController _searchController = TextEditingController();
-  // Map<String, dynamic> _tariffsData = {}; // No longer needed here, handled by recommender
   final SmartCallRecommender _recommender = SmartCallRecommender(); // Instantiate the recommender
 
   @override
@@ -45,8 +44,6 @@ class _ContactsScreenState extends State<ContactsScreen> {
       _isLoading = true;
       _permissionDenied = false;
     });
-    // No need to load tariffs manually here, recommender handles it
-    // _tariffsData = await OperatorDetector.loadTariffs();
     await _fetchContacts();
     if (mounted) {
       setState(() {
@@ -54,7 +51,6 @@ class _ContactsScreenState extends State<ContactsScreen> {
       });
     }
   }
-
 
   Future<void> _fetchContacts() async {
     PermissionStatus status = await Permission.contacts.request();
@@ -80,43 +76,46 @@ class _ContactsScreenState extends State<ContactsScreen> {
           // Only process if a valid phone was found and the contact is not already processed
           if (firstValidPhone != null && !uniqueContacts.containsKey(contact.id)) {
             String phoneNumber = firstValidPhone.number;
-              String? countryCode;
-              String? flagEmoji;
-              AlgerianMobileOperator operator = AlgerianMobileOperator.Unknown;
-              SimChoice recommendation = SimChoice.none; // Default recommendation
+            String? countryCode;
+            String? flagEmoji;
+            AlgerianMobileOperator operator = AlgerianMobileOperator.Unknown;
+            SimChoice recommendation = SimChoice.none; // Default recommendation
 
-              try {
-                RegionInfo? regionInfo = await phone_util.PhoneNumberUtil.getRegionInfo(phoneNumber, 'DZ');
-                if (regionInfo != null && regionInfo.isoCode != null) {
-                  countryCode = regionInfo.isoCode;
+            try {
+              RegionInfo? regionInfo = await phone_util.PhoneNumberUtil.getRegionInfo(phoneNumber, 'DZ');
+              if (regionInfo != null && regionInfo.isoCode != null) {
+                countryCode = regionInfo.isoCode;
+                // Only set flag if country code is NOT DZ
+                if (countryCode != 'DZ') {
                   flagEmoji = emoji_converter.EmojiConverter.fromAlpha2CountryCode(countryCode!);
-                  if (countryCode == 'DZ') {
-                    operator = OperatorDetector.detectOperator(phoneNumber);
-                  }
                 }
-              } catch (e) {
-                print('Error getting region info for phone number $phoneNumber: $e');
-                if (phoneNumber.startsWith('+213') || phoneNumber.startsWith('00213') || phoneNumber.startsWith('0')) {
-                   operator = OperatorDetector.detectOperator(phoneNumber);
-                   if (operator != AlgerianMobileOperator.Unknown) {
-                     countryCode = 'DZ';
-                     flagEmoji = emoji_converter.EmojiConverter.fromAlpha2CountryCode('DZ');
-                   }
+                if (countryCode == 'DZ') {
+                  operator = OperatorDetector.detectOperator(phoneNumber);
                 }
               }
-
-              // Get recommendation using the SmartCallRecommender
-              recommendation = await _recommender.getBestSim(phoneNumber);
-
-              uniqueContacts[contact.id] = ContactWithDetails(
-                contact: contact,
-                phoneNumber: phoneNumber, // Store only the first number
-                countryCode: countryCode,
-                countryFlagEmoji: flagEmoji,
-                operatorInfo: operator,
-                recommendedSim: recommendation, // Store the recommendation
-              );
+            } catch (e) {
+              print('Error getting region info for phone number $phoneNumber: $e');
+              // Fallback for Algerian numbers if region info fails
+              if (phoneNumber.startsWith('+213') || phoneNumber.startsWith('00213') || phoneNumber.startsWith('0')) {
+                 operator = OperatorDetector.detectOperator(phoneNumber);
+                 if (operator != AlgerianMobileOperator.Unknown) {
+                   countryCode = 'DZ'; // Assume DZ if operator detected
+                   // Do not set flag for DZ
+                 }
+              }
             }
+
+            // Get recommendation using the SmartCallRecommender
+            recommendation = await _recommender.getBestSim(phoneNumber);
+
+            uniqueContacts[contact.id] = ContactWithDetails(
+              contact: contact,
+              phoneNumber: phoneNumber, // Store only the first number
+              countryCode: countryCode,
+              countryFlagEmoji: flagEmoji, // Will be null for DZ numbers
+              operatorInfo: operator,
+              recommendedSim: recommendation, // Store the recommendation
+            );
           }
         }
         processedContacts = uniqueContacts.values.toList(); // Convert map values back to list
@@ -191,7 +190,6 @@ class _ContactsScreenState extends State<ContactsScreen> {
       }
     } catch (e, stacktrace) { // Added stacktrace
       print("Could not launch $url: $e\n$stacktrace"); // Log error with stacktrace
-      // Avoid showing SnackBar if context is not available or widget is disposed
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Impossible de lancer l'action pour ${url.scheme}")),
@@ -200,11 +198,6 @@ class _ContactsScreenState extends State<ContactsScreen> {
     }
   }
 
-  // --- Appel Malin Logic Integration ---
-
-  // REMOVED: _getCheapestSim method is replaced by SmartCallRecommender
-
-  /// Builds the widget to indicate the recommended SIM based on SimChoice.
   Widget _buildRecommendationIndicator(SimChoice recommendation) {
     IconData iconData;
     Color iconColor;
@@ -213,16 +206,16 @@ class _ContactsScreenState extends State<ContactsScreen> {
     switch (recommendation) {
       case SimChoice.sim1:
         iconData = Icons.looks_one_outlined;
-        iconColor = Colors.green; // Keep green for SIM 1
+        iconColor = Colors.green;
         tooltip = 'SIM 1 recommandée (coût/bonus)';
         break;
       case SimChoice.sim2:
         iconData = Icons.looks_two_outlined;
-        iconColor = Colors.blue; // Keep blue for SIM 2
+        iconColor = Colors.blue;
         tooltip = 'SIM 2 recommandée (coût/bonus)';
         break;
       case SimChoice.none:
-        iconData = Icons.money_off_outlined; // Icon indicating no suitable SIM (cost/credit)
+        iconData = Icons.money_off_outlined;
         iconColor = Colors.red;
         tooltip = 'Aucune SIM recommandée (crédit insuffisant?)';
         break;
@@ -231,8 +224,6 @@ class _ContactsScreenState extends State<ContactsScreen> {
         iconColor = Colors.orange;
         tooltip = 'Erreur lors du calcul de la recommandation';
         break;
-      // default: // Not needed with enum
-      //   return const SizedBox.shrink();
     }
 
     return Tooltip(
@@ -243,7 +234,6 @@ class _ContactsScreenState extends State<ContactsScreen> {
       ),
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -329,7 +319,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
         final contact = details.contact;
         final logoPath = _getOperatorLogoPath(details.operatorInfo);
         final phoneNumber = details.phoneNumber;
-        final recommendation = details.recommendedSim ?? SimChoice.none; // Use stored recommendation
+        final recommendation = details.recommendedSim ?? SimChoice.none;
 
         return ListTile(
           leading: CircleAvatar(
@@ -339,13 +329,13 @@ class _ContactsScreenState extends State<ContactsScreen> {
           subtitle: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              // Only show flag if it's not null (i.e., not DZ)
               if (details.countryFlagEmoji != null)
                 Padding(
                   padding: const EdgeInsets.only(right: 4.0),
                   child: Text(details.countryFlagEmoji!, style: const TextStyle(fontSize: 16)),
                 ),
               Expanded(child: Text(phoneNumber ?? 'Pas de numéro')),
-              // Use the new recommendation indicator
               _buildRecommendationIndicator(recommendation),
               if (logoPath != null)
                 Padding(
@@ -362,7 +352,6 @@ class _ContactsScreenState extends State<ContactsScreen> {
               ? Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // TODO: Consider highlighting the call button based on recommendation?
                     IconButton(
                       icon: const Icon(Icons.call_outlined),
                       tooltip: 'Appeler',
