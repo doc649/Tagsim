@@ -62,7 +62,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       applicationVersion: _appVersion,
       // Use the actual app logo now
       applicationIcon: Image.asset('assets/images/app_logo_final.png', height: 40),
-      applicationLegalese: '© 2025 Votre Nom/Société',
+      applicationLegalese: '© 2025 Doctor idée',
       children: <Widget>[
         const Padding(
           padding: EdgeInsets.only(top: 15),

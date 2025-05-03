@@ -21,9 +21,9 @@ class Promotion {
 
   factory Promotion.fromJson(Map<String, dynamic> json) {
     return Promotion(
-      operator: json['operator'] ?? 'Unknown',
-      title: json['title'] ?? 'No Title',
-      description: json['description'] ?? 'No Description',
+      operator: json["operator"] ?? "Unknown",
+      title: json["name"] ?? "No Title", // Use 'name' from JSON
+      description: json["description"] ?? "No Description",
       validity: json['validity'] ?? 'N/A',
       link: json['link'], // Keep link as nullable
     );

@@ -26,12 +26,14 @@ class SmartCallRecommender {
 
   // Main method to get the best SIM recommendation
   Future<SimChoice> getBestSim(String destinationNumber) async {
+    print("--- Calculating best SIM for $destinationNumber ---"); // Added log
     try {
       await _loadTariffsIfNeeded();
       if (_tariffs == null || _tariffs!.isEmpty) { // Check if tariffs are empty too
-        print('Error: Tariffs could not be loaded or are empty.');
+        print("Error: Tariffs could not be loaded or are empty.");
         return SimChoice.error;
       }
+      print("Tariffs loaded successfully."); // Added log
 
       // --- Get User Preferences --- //
       final double sim1Credit = UserPreferences.getSim1Credit();
@@ -45,6 +47,7 @@ class SmartCallRecommender {
       final String? sim2BonusValidityStr = UserPreferences.getSim2BonusValidity();
 
       final int estimatedDuration = UserPreferences.getEstimatedDuration();
+      print("Preferences: SIM1(Credit: $sim1Credit, Bonus: $sim1BonusType, $sim1BonusAmount, $sim1BonusValidityStr), SIM2(Credit: $sim2Credit, Bonus: $sim2BonusType, $sim2BonusAmount, $sim2BonusValidityStr), Duration: $estimatedDuration"); // Added log
 
       // Get SharedPreferences instance needed for calculateCallCost
       final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -62,41 +65,48 @@ class SmartCallRecommender {
         destinationNumber: destinationNumber,
         prefs: prefs,
       );
+      print("Costs per minute: SIM1=$sim1CostPerMinute, SIM2=$sim2CostPerMinute"); // Added log
 
       // --- Factor in Bonuses --- //
       bool sim1BonusApplies = _isBonusApplicable(sim1BonusType, sim1BonusAmount, sim1BonusValidityStr, estimatedDuration);
       bool sim2BonusApplies = _isBonusApplicable(sim2BonusType, sim2BonusAmount, sim2BonusValidityStr, estimatedDuration);
+      print("Bonus applicability: SIM1=$sim1BonusApplies, SIM2=$sim2BonusApplies"); // Added log
 
       // --- Calculate Adjusted Costs for Estimated Duration --- //
       // If bonus applies, cost is 0. Otherwise, it's cost_per_minute * duration.
       double sim1AdjustedCost = sim1BonusApplies ? 0.0 : sim1CostPerMinute * estimatedDuration;
       double sim2AdjustedCost = sim2BonusApplies ? 0.0 : sim2CostPerMinute * estimatedDuration;
+      print("Adjusted costs: SIM1=$sim1AdjustedCost, SIM2=$sim2AdjustedCost"); // Added log
 
       // --- Check Credit Availability --- //
       bool sim1HasEnoughCredit = sim1Credit >= sim1AdjustedCost;
       bool sim2HasEnoughCredit = sim2Credit >= sim2AdjustedCost;
+      print("Credit check: SIM1=$sim1HasEnoughCredit, SIM2=$sim2HasEnoughCredit"); // Added log
 
       // --- Decision Logic --- //
+      SimChoice result;
       if (sim1HasEnoughCredit && sim2HasEnoughCredit) {
         // Both have enough credit, choose the cheaper one (bonus prioritized)
         if (sim1AdjustedCost <= sim2AdjustedCost) {
-          return SimChoice.sim1;
+          result = SimChoice.sim1;
         } else {
-          return SimChoice.sim2;
+          result = SimChoice.sim2;
         }
       } else if (sim1HasEnoughCredit) {
         // Only SIM 1 has enough credit
-        return SimChoice.sim1;
+        result = SimChoice.sim1;
       } else if (sim2HasEnoughCredit) {
         // Only SIM 2 has enough credit
-        return SimChoice.sim2;
+        result = SimChoice.sim2;
       } else {
         // Neither has enough credit
-        return SimChoice.none;
+        result = SimChoice.none;
       }
+      print("Recommendation result: $result"); // Added log
+      return result;
 
-    } catch (e) {
-      print('Error in getBestSim: $e');
+    } catch (e, stacktrace) { // Added stacktrace
+      print('Error in getBestSim: $e\n$stacktrace'); // Log stacktrace
       return SimChoice.error;
     }
   }

@@ -65,51 +65,55 @@ class _ContactsScreenState extends State<ContactsScreen> {
             withProperties: true, withPhoto: false);
 
         List<ContactWithDetails> processedContacts = [];
+        Map<String, ContactWithDetails> uniqueContacts = {}; // Use Map to handle duplicates by contact ID
+
         for (var contact in contacts) {
           if (contact.phones.isNotEmpty) {
-            for (var phone in contact.phones) {
-              if (phone.number.isNotEmpty) {
-                String phoneNumber = phone.number;
-                String? countryCode;
-                String? flagEmoji;
-                AlgerianMobileOperator operator = AlgerianMobileOperator.Unknown;
-                SimChoice recommendation = SimChoice.none; // Default recommendation
+            // Use the first non-empty phone number for this contact
+            Phone? firstPhone = contact.phones.firstWhere((p) => p.number.isNotEmpty, orElse: () => null);
 
-                try {
-                  RegionInfo? regionInfo = await phone_util.PhoneNumberUtil.getRegionInfo(phoneNumber, 'DZ');
-                  if (regionInfo != null && regionInfo.isoCode != null) {
-                    countryCode = regionInfo.isoCode;
-                    flagEmoji = emoji_converter.EmojiConverter.fromAlpha2CountryCode(countryCode!);
-                    if (countryCode == 'DZ') {
-                      operator = OperatorDetector.detectOperator(phoneNumber);
-                    }
-                  }
-                } catch (e) {
-                  print('Error getting region info for phone number $phoneNumber: $e');
-                  if (phoneNumber.startsWith('+213') || phoneNumber.startsWith('00213') || phoneNumber.startsWith('0')) {
-                     operator = OperatorDetector.detectOperator(phoneNumber);
-                     if (operator != AlgerianMobileOperator.Unknown) {
-                       countryCode = 'DZ';
-                       flagEmoji = emoji_converter.EmojiConverter.fromAlpha2CountryCode('DZ');
-                     }
+            if (firstPhone != null && !uniqueContacts.containsKey(contact.id)) {
+              String phoneNumber = firstPhone.number;
+              String? countryCode;
+              String? flagEmoji;
+              AlgerianMobileOperator operator = AlgerianMobileOperator.Unknown;
+              SimChoice recommendation = SimChoice.none; // Default recommendation
+
+              try {
+                RegionInfo? regionInfo = await phone_util.PhoneNumberUtil.getRegionInfo(phoneNumber, 'DZ');
+                if (regionInfo != null && regionInfo.isoCode != null) {
+                  countryCode = regionInfo.isoCode;
+                  flagEmoji = emoji_converter.EmojiConverter.fromAlpha2CountryCode(countryCode!);
+                  if (countryCode == 'DZ') {
+                    operator = OperatorDetector.detectOperator(phoneNumber);
                   }
                 }
-
-                // Get recommendation using the SmartCallRecommender
-                recommendation = await _recommender.getBestSim(phoneNumber);
-
-                processedContacts.add(ContactWithDetails(
-                  contact: contact,
-                  phoneNumber: phoneNumber,
-                  countryCode: countryCode,
-                  countryFlagEmoji: flagEmoji,
-                  operatorInfo: operator,
-                  recommendedSim: recommendation, // Store the recommendation
-                ));
+              } catch (e) {
+                print('Error getting region info for phone number $phoneNumber: $e');
+                if (phoneNumber.startsWith('+213') || phoneNumber.startsWith('00213') || phoneNumber.startsWith('0')) {
+                   operator = OperatorDetector.detectOperator(phoneNumber);
+                   if (operator != AlgerianMobileOperator.Unknown) {
+                     countryCode = 'DZ';
+                     flagEmoji = emoji_converter.EmojiConverter.fromAlpha2CountryCode('DZ');
+                   }
+                }
               }
+
+              // Get recommendation using the SmartCallRecommender
+              recommendation = await _recommender.getBestSim(phoneNumber);
+
+              uniqueContacts[contact.id] = ContactWithDetails(
+                contact: contact,
+                phoneNumber: phoneNumber, // Store only the first number
+                countryCode: countryCode,
+                countryFlagEmoji: flagEmoji,
+                operatorInfo: operator,
+                recommendedSim: recommendation, // Store the recommendation
+              );
             }
           }
         }
+        processedContacts = uniqueContacts.values.toList(); // Convert map values back to list
         processedContacts.sort((a, b) => a.contact.displayName.toLowerCase().compareTo(b.contact.displayName.toLowerCase()));
 
         if (mounted) {
@@ -161,23 +165,32 @@ class _ContactsScreenState extends State<ContactsScreen> {
     }
   }
 
-  Future<void> _launchUniversalLink(Uri url) async {
+   Future<void> _launchUniversalLink(Uri url) async {
+    print("Attempting to launch URL: $url"); // Log start
     try {
+      print("Trying to launch in external non-browser app..."); // Log native attempt
       final bool nativeAppLaunchSucceeded = await launchUrl(
         url,
         mode: LaunchMode.externalNonBrowserApplication,
       );
       if (!nativeAppLaunchSucceeded) {
+        print("Native app launch failed, trying external application..."); // Log fallback attempt
         await launchUrl(
           url,
           mode: LaunchMode.externalApplication,
         );
+        print("Launched in external application."); // Log success fallback
+      } else {
+        print("Launched successfully in native app."); // Log success native
       }
-    } catch (e) {
-      print('Could not launch $url: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Impossible de lancer l\'action pour ${url.scheme}')),
-      );
+    } catch (e, stacktrace) { // Added stacktrace
+      print("Could not launch $url: $e\n$stacktrace"); // Log error with stacktrace
+      // Avoid showing SnackBar if context is not available or widget is disposed
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Impossible de lancer l'action pour ${url.scheme}")),
+        );
+      }
     }
   }
 
