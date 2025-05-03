@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:tagsim/screens/contacts_screen.dart';
-import 'package:tagsim/screens/call_log_screen.dart';
 import 'package:tagsim/screens/ussd_codes_screen.dart';
 import 'package:tagsim/screens/settings_screen.dart';
 
@@ -19,10 +18,8 @@ class _HomeScreenState extends State<HomeScreen> {
   // Define the screens for each tab - must be initialized dynamically if passing parameters
   late final List<Widget> _widgetOptions;
 
-  // Define titles for each screen
-  static const List<String> _appBarTitles = <String>[
+  // Define titles for each screen  static const List<String> _appBarTitles = <String>[
     'Contacts',
-    'Journal d\'appels',
     'Codes USSD',
     'Paramètres',
   ];
@@ -33,7 +30,6 @@ class _HomeScreenState extends State<HomeScreen> {
     // Initialize _widgetOptions here to access widget.onThemeChanged
     _widgetOptions = <Widget>[
       const ContactsScreen(),
-      const CallLogScreen(),
       const UssdCodesScreen(),
       SettingsScreen(onThemeChanged: widget.onThemeChanged), // Pass callback here
     ];
@@ -72,11 +68,6 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icon(Icons.contacts_outlined), // Modernized icon
             activeIcon: Icon(Icons.contacts), // Optional: Filled icon when active
             label: 'Contacts',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.call_outlined), // Modernized icon
-            activeIcon: Icon(Icons.call),
-            label: 'Journal',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.dialpad_outlined), // Modernized icon
