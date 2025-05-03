@@ -45,18 +45,18 @@ class _TagSimAppState extends State<TagSimApp> {
       title: 'TagSim',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
+          seedColor: Colors.deepPurple, // Changed to deepPurple
           brightness: Brightness.light,
         ),
         useMaterial3: true,
         appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.blue,
+          backgroundColor: Colors.deepPurple, // Changed to deepPurple
           foregroundColor: Colors.white,
         ),
       ),
       darkTheme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
+          seedColor: Colors.deepPurple, // Changed to deepPurple
           brightness: Brightness.dark,
         ),
         useMaterial3: true,

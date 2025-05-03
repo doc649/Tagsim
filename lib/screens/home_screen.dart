@@ -19,6 +19,14 @@ class _HomeScreenState extends State<HomeScreen> {
   // Define the screens for each tab - must be initialized dynamically if passing parameters
   late final List<Widget> _widgetOptions;
 
+  // Define titles for each screen
+  static const List<String> _appBarTitles = <String>[
+    'Contacts',
+    'Journal d\appels',
+    'Codes USSD',
+    'Paramètres',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -40,10 +48,21 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // AppBar might be removed or adapted depending on screen content
-      // appBar: AppBar(
-      //   title: const Text('TagSim'),
-      // ),
+      appBar: AppBar(
+        // Display the logo and the title corresponding to the selected screen
+        title: Row(
+          children: [
+            Image.asset(
+              'assets/logos/generated_app_logo.png',
+              height: 30, // Adjust height to fit AppBar
+              errorBuilder: (context, error, stackTrace) => const Icon(Icons.sim_card, color: Colors.white), // Fallback icon
+            ),
+            const SizedBox(width: 8),
+            // Text(_appBarTitles[_selectedIndex]), // Optionally show screen title too
+          ],
+        ),
+        // Keep the blue background and white foreground defined in main.dart theme
+      ),
       body: Center(
         child: _widgetOptions.elementAt(_selectedIndex),
       ),
