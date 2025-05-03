@@ -162,35 +162,58 @@ class _ContactsScreenState extends State<ContactsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Contacts screen doesn't need its own AppBar if it's part of HomeScreen's body
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Contacts'),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(kToolbarHeight),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+      // appBar: AppBar(
+      //   title: const Text('Contacts'),
+      //   bottom: PreferredSize(
+      //     preferredSize: const Size.fromHeight(kToolbarHeight),
+      //     child: Padding(
+      //       padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+      //       child: TextField(
+      //         controller: _searchController,
+      //         decoration: InputDecoration(
+      //           hintText: 'Rechercher des contacts...',
+      //           prefixIcon: const Icon(Icons.search_outlined), // Modernized icon
+      //           border: OutlineInputBorder(
+      //             borderRadius: BorderRadius.circular(25.0),
+      //             borderSide: BorderSide.none,
+      //           ),
+      //           filled: true,
+      //           contentPadding: EdgeInsets.zero,
+      //           fillColor: Theme.of(context).colorScheme.surfaceContainerHighest, // M3 color
+      //         ),
+      //       ),
+      //     ),
+      //   ),
+      // ),
+      body: Column(
+        children: [
+          // Search bar moved here from AppBar
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: 'Rechercher des contacts...',
-                prefixIcon: const Icon(Icons.search),
+                prefixIcon: const Icon(Icons.search_outlined), // Modernized icon
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(25.0),
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
                 contentPadding: EdgeInsets.zero,
-                fillColor: Theme.of(context).colorScheme.surfaceVariant, // Use theme color
+                fillColor: Theme.of(context).colorScheme.surfaceContainerHighest, // M3 color
               ),
             ),
           ),
-        ),
+          Expanded(child: _buildBody()),
+        ],
       ),
-      body: _buildBody(),
       floatingActionButton: FloatingActionButton(
         onPressed: _fetchContacts,
         tooltip: 'Rafraîchir les contacts',
-        child: const Icon(Icons.refresh),
+        child: const Icon(Icons.refresh_outlined), // Modernized icon
       ),
     );
   }
@@ -207,18 +230,23 @@ class _ContactsScreenState extends State<ContactsScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              const Icon(Icons.perm_contact_calendar_outlined, size: 64), // Modernized icon
+              const SizedBox(height: 16),
               const Text(
                 'Permission d\'accès aux contacts refusée.',
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              ElevatedButton(
+              ElevatedButton.icon(
+                icon: const Icon(Icons.settings_outlined), // Modernized icon
                 onPressed: openAppSettings,
-                child: const Text('Ouvrir les paramètres'),
+                label: const Text('Ouvrir les paramètres'),
               ),
-              ElevatedButton(
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                icon: const Icon(Icons.refresh_outlined), // Modernized icon
                 onPressed: _fetchContacts,
-                child: const Text('Réessayer'),
+                label: const Text('Réessayer'),
               ),
             ],
           ),
@@ -243,6 +271,9 @@ class _ContactsScreenState extends State<ContactsScreen> {
         final phoneNumber = details.phoneNumber;
 
         return ListTile(
+          leading: CircleAvatar( // Display initials or placeholder
+            child: Text(contact.displayName.isNotEmpty ? contact.displayName[0].toUpperCase() : '?'),
+          ),
           title: Text(contact.displayName.isNotEmpty ? contact.displayName : '(Sans nom)'),
           subtitle: Row(
             crossAxisAlignment: CrossAxisAlignment.center, // Center items vertically
@@ -259,7 +290,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
                   child: Image.asset(
                     logoPath,
                     height: 24, // Adjust height as needed
-                    errorBuilder: (context, error, stackTrace) => const Icon(Icons.error, size: 16), // Fallback icon
+                    errorBuilder: (context, error, stackTrace) => const Icon(Icons.error_outline, size: 16), // Modernized icon
                   ),
                 ),
             ],
@@ -269,7 +300,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.call),
+                      icon: const Icon(Icons.call_outlined), // Modernized icon
                       tooltip: 'Appeler',
                       onPressed: () {
                         final Uri callUri = Uri(scheme: 'tel', path: phoneNumber);
@@ -277,7 +308,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
                       },
                     ),
                     IconButton(
-                      icon: const Icon(Icons.message),
+                      icon: const Icon(Icons.message_outlined), // Modernized icon
                       tooltip: 'Envoyer SMS',
                       onPressed: () {
                         final Uri smsUri = Uri(scheme: 'sms', path: phoneNumber);

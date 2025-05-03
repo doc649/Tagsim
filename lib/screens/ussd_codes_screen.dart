@@ -38,9 +38,11 @@ class _UssdCodesScreenState extends State<UssdCodesScreen> {
       });
       // Handle error loading data
       print('Error loading USSD data: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Erreur lors du chargement des codes USSD.')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Erreur lors du chargement des codes USSD.')),
+        );
+      }
     }
   }
 
@@ -49,30 +51,35 @@ class _UssdCodesScreenState extends State<UssdCodesScreen> {
     // For now, we handle simple codes. Complex codes with inputs need more logic.
     if (code.contains('{')) {
       // Placeholder for future implementation: Show a dialog to input the required value
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ce code nécessite une saisie manuelle : $code')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ce code nécessite une saisie manuelle : $code')),
+        );
+      }
       return;
     }
 
     final Uri url = Uri(scheme: 'tel', path: Uri.encodeComponent(code));
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url);
-    } else {
-      print('Could not launch $url');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Impossible de lancer le code USSD : $code')),
-      );
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url);
+      } else {
+        throw Exception('Could not launch $url');
+      }
+    } catch (e) {
+      print('Could not launch $url: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Impossible de lancer le code USSD : $code')),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // No separate AppBar needed as it's part of HomeScreen
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Codes USSD Algérie'),
-        elevation: 0, // Remove shadow for a cleaner look integrated with body
-      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _ussdData.isEmpty
@@ -91,11 +98,16 @@ class _UssdCodesScreenState extends State<UssdCodesScreen> {
   Widget _buildOperatorSelector() {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-      color: Theme.of(context).primaryColor.withOpacity(0.1),
+      // Use a surface color for background for better theme adaptation
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
       child: DropdownButton<String>(
         value: _selectedOperator,
         isExpanded: true,
         underline: Container(), // Remove underline
+        // Style dropdown to match modern theme
+        icon: const Icon(Icons.arrow_drop_down_outlined),
+        style: Theme.of(context).textTheme.titleMedium,
+        dropdownColor: Theme.of(context).colorScheme.surfaceContainer,
         onChanged: (String? newValue) {
           setState(() {
             _selectedOperator = newValue;
@@ -104,7 +116,7 @@ class _UssdCodesScreenState extends State<UssdCodesScreen> {
         items: _ussdData.map<DropdownMenuItem<String>>((dynamic operatorData) {
           return DropdownMenuItem<String>(
             value: operatorData['operator'],
-            child: Text(operatorData['operator'], style: const TextStyle(fontWeight: FontWeight.bold)),
+            child: Text(operatorData['operator']),
           );
         }).toList(),
       ),
@@ -120,18 +132,23 @@ class _UssdCodesScreenState extends State<UssdCodesScreen> {
     final categories = operatorData['categories'] as List<dynamic>;
 
     return ListView.builder(
+      padding: const EdgeInsets.only(bottom: 80), // Add padding to avoid FAB overlap
       itemCount: categories.length,
       itemBuilder: (context, index) {
         final category = categories[index];
         final codes = category['codes'] as List<dynamic>;
         return ExpansionTile(
-          title: Text(category['name'], style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
+          // Style ExpansionTile for modern look
+          shape: const Border(), // Remove default border
+          collapsedShape: const Border(), // Remove default border when collapsed
+          leading: const Icon(Icons.category_outlined), // Modernized icon
+          title: Text(category['name'], style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
           children: codes.map<Widget>((codeData) {
             return ListTile(
               title: Text(codeData['description']),
               subtitle: Text(codeData['code']),
               trailing: IconButton(
-                icon: const Icon(Icons.dialpad),
+                icon: const Icon(Icons.dialpad_outlined), // Modernized icon
                 onPressed: () => _launchUssd(codeData['code']),
                 tooltip: 'Composer',
               ),

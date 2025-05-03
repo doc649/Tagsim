@@ -22,7 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // Define titles for each screen
   static const List<String> _appBarTitles = <String>[
     'Contacts',
-    'Journal d\appels',
+    'Journal d\'appels',
     'Codes USSD',
     'Paramètres',
   ];
@@ -49,19 +49,19 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        // Display the logo and the title corresponding to the selected screen
+        // Display the logo
         title: Row(
           children: [
             Image.asset(
               'assets/logos/generated_app_logo.png',
               height: 30, // Adjust height to fit AppBar
-              errorBuilder: (context, error, stackTrace) => const Icon(Icons.sim_card, color: Colors.white), // Fallback icon
+              errorBuilder: (context, error, stackTrace) => Icon(Icons.sim_card_outlined, color: Theme.of(context).colorScheme.onPrimary), // Fallback icon (modernized)
             ),
-            const SizedBox(width: 8),
+            // const SizedBox(width: 8),
             // Text(_appBarTitles[_selectedIndex]), // Optionally show screen title too
           ],
         ),
-        // Keep the blue background and white foreground defined in main.dart theme
+        // AppBar theme is handled by the main theme
       ),
       body: Center(
         child: _widgetOptions.elementAt(_selectedIndex),
@@ -69,28 +69,31 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
-            icon: Icon(Icons.contacts),
+            icon: Icon(Icons.contacts_outlined), // Modernized icon
+            activeIcon: Icon(Icons.contacts), // Optional: Filled icon when active
             label: 'Contacts',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.call),
+            icon: Icon(Icons.call_outlined), // Modernized icon
+            activeIcon: Icon(Icons.call),
             label: 'Journal',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.dialpad),
+            icon: Icon(Icons.dialpad_outlined), // Modernized icon
+            activeIcon: Icon(Icons.dialpad),
             label: 'USSD',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
+            icon: Icon(Icons.settings_outlined), // Modernized icon
+            activeIcon: Icon(Icons.settings),
             label: 'Paramètres',
           ),
         ],
         currentIndex: _selectedIndex,
-        // Use fixed type for more than 3 items to keep labels visible
         type: BottomNavigationBarType.fixed,
-        // Use theme colors for selected/unselected items
-        selectedItemColor: Theme.of(context).primaryColor,
-        unselectedItemColor: Colors.grey,
+        // Let the theme handle colors
+        // selectedItemColor: Theme.of(context).colorScheme.primary,
+        // unselectedItemColor: Theme.of(context).colorScheme.onSurfaceVariant,
         onTap: _onItemTapped,
       ),
     );

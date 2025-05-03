@@ -28,7 +28,9 @@ class _CallLogScreenState extends State<CallLogScreen> {
       _permissionDenied = false;
     });
 
-    PermissionStatus status = await Permission.phone.request(); // Request phone permission (includes call log)
+    // Request phone state permission (includes call log access on older Android)
+    // On newer Android, READ_CALL_LOG is separate but often grouped.
+    PermissionStatus status = await Permission.phone.request();
 
     if (status.isGranted) {
       try {
@@ -42,9 +44,11 @@ class _CallLogScreenState extends State<CallLogScreen> {
         setState(() {
           _isLoading = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erreur lors de la récupération du journal d\appels.')),
-        );
+        if (mounted) { // Check if the widget is still in the tree
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Erreur lors de la récupération du journal d\appels.')),
+          );
+        }
       }
     } else {
       setState(() {
@@ -55,21 +59,38 @@ class _CallLogScreenState extends State<CallLogScreen> {
   }
 
   // Helper function to get icon based on call type
-  Icon _getCallTypeIcon(CallType callType) {
+  Widget _getCallTypeIcon(CallType callType, BuildContext context) {
+    IconData iconData;
+    Color iconColor;
+    final colors = Theme.of(context).colorScheme;
+
     switch (callType) {
       case CallType.incoming:
-        return const Icon(Icons.call_received, color: Colors.green);
+        iconData = Icons.call_received_outlined;
+        iconColor = Colors.green; // Consider using theme colors like colors.tertiary
+        break;
       case CallType.outgoing:
-        return const Icon(Icons.call_made, color: Colors.blue);
+        iconData = Icons.call_made_outlined;
+        iconColor = colors.primary; // Use theme primary color
+        break;
       case CallType.missed:
-        return const Icon(Icons.call_missed, color: Colors.red);
+        iconData = Icons.call_missed_outlined;
+        iconColor = colors.error; // Use theme error color
+        break;
       case CallType.rejected:
-        return const Icon(Icons.call_end, color: Colors.orange);
+        iconData = Icons.call_end_outlined;
+        iconColor = Colors.orange; // Consider using theme colors like colors.secondary
+        break;
       case CallType.blocked:
-        return const Icon(Icons.block, color: Colors.grey);
+        iconData = Icons.block_outlined;
+        iconColor = colors.onSurfaceVariant; // Use a neutral theme color
+        break;
       default:
-        return const Icon(Icons.help_outline, color: Colors.grey);
+        iconData = Icons.help_outline;
+        iconColor = colors.onSurfaceVariant;
+        break;
     }
+    return Icon(iconData, color: iconColor);
   }
 
   // Helper function to format duration
@@ -97,7 +118,8 @@ class _CallLogScreenState extends State<CallLogScreen> {
     } else if (dateTime.isAfter(yesterday)) {
       return 'Hier, ${DateFormat.Hm().format(dateTime)}'; // Yesterday + time
     } else {
-      return DateFormat.yMd().add_Hm().format(dateTime); // Full date and time
+      // Use locale-aware date format
+      return DateFormat.yMd(Localizations.localeOf(context).languageCode).add_Hm().format(dateTime);
     }
   }
 
@@ -111,21 +133,23 @@ class _CallLogScreenState extends State<CallLogScreen> {
       }
     } catch (e) {
       print('Could not launch $url: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Impossible de lancer l\appel vers $number')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Impossible de lancer l\appel vers $number')),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // appBar: AppBar(title: Text('Journal d'appels')), // Removed to integrate
+      // appBar: AppBar(title: Text('Journal d'appels')), // Integrated into HomeScreen
       body: _buildBody(),
       floatingActionButton: FloatingActionButton(
         onPressed: _fetchCallLogs,
         tooltip: 'Rafraîchir le journal',
-        child: const Icon(Icons.refresh),
+        child: const Icon(Icons.refresh_outlined), // Modernized icon
       ),
     );
   }
@@ -142,18 +166,23 @@ class _CallLogScreenState extends State<CallLogScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              const Icon(Icons.phone_disabled_outlined, size: 64), // Modernized icon
+              const SizedBox(height: 16),
               const Text(
                 'Permission d\accès au journal d\appels refusée.',
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              ElevatedButton(
+              ElevatedButton.icon(
+                icon: const Icon(Icons.settings_outlined), // Modernized icon
                 onPressed: openAppSettings,
-                child: const Text('Ouvrir les paramètres'),
+                label: const Text('Ouvrir les paramètres'),
               ),
-              ElevatedButton(
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                icon: const Icon(Icons.refresh_outlined), // Modernized icon
                 onPressed: _fetchCallLogs,
-                child: const Text('Réessayer'),
+                label: const Text('Réessayer'),
               ),
             ],
           ),
@@ -169,7 +198,7 @@ class _CallLogScreenState extends State<CallLogScreen> {
       itemCount: _callLogEntries.length,
       itemBuilder: (context, index) {
         final entry = _callLogEntries.elementAt(index);
-        final callTypeIcon = _getCallTypeIcon(entry.callType ?? CallType.unknown);
+        final callTypeIcon = _getCallTypeIcon(entry.callType ?? CallType.unknown, context);
         final formattedDuration = _formatDuration(entry.duration ?? 0);
         final formattedDateTime = _formatDateTime(entry.timestamp ?? 0);
 
@@ -177,7 +206,7 @@ class _CallLogScreenState extends State<CallLogScreen> {
           leading: callTypeIcon,
           title: Text(entry.name ?? entry.number ?? 'Numéro inconnu'),
           subtitle: Text('${entry.number ?? ''} • $formattedDuration'),
-          trailing: Text(formattedDateTime),
+          trailing: Text(formattedDateTime, style: Theme.of(context).textTheme.bodySmall),
           onTap: () => _launchCall(entry.number), // Call back on tap
         );
       },
