@@ -3,7 +3,8 @@ import 'package:tagsim/screens/contacts_screen.dart';
 import 'package:tagsim/screens/ussd_codes_screen.dart';
 import 'package:tagsim/screens/settings_screen.dart';
 import 'package:tagsim/screens/dashboard_screen.dart';
-import 'package:tagsim/screens/offer_comparator_screen.dart'; // Import the offer comparator screen
+import 'package:tagsim/screens/offer_comparator_screen.dart';
+import 'package:tagsim/services/telephony_service.dart'; // Import TelephonyService
 
 class HomeScreen extends StatefulWidget {
   final Function(ThemeMode) onThemeChanged;
@@ -19,26 +20,53 @@ class _HomeScreenState extends State<HomeScreen> {
 
   late final List<Widget> _widgetOptions;
 
-  // Define titles for each screen (optional)
-  // static const List<String> _appBarTitles = <String>[
-  //   'Contacts',
-  //   'Codes USSD',
-  //   'Offres',
-  //   'Dashboard',
-  //   'Paramètres',
-  // ];
-
   @override
   void initState() {
     super.initState();
     _widgetOptions = <Widget>[
       const ContactsScreen(),
       const UssdCodesScreen(),
-      const OfferComparatorScreen(), // Add OfferComparatorScreen here
+      const OfferComparatorScreen(),
       const DashboardScreen(),
       SettingsScreen(onThemeChanged: widget.onThemeChanged),
     ];
+    // Check roaming status after the first frame is rendered
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkRoamingStatus();
+    });
   }
+
+  Future<void> _checkRoamingStatus() async {
+    try {
+      bool roaming = await TelephonyService.isRoaming();
+      if (roaming && mounted) { // Check if mounted before showing dialog
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Mode Voyage Détecté'),
+              content: const Text(
+                  'Il semble que vous soyez en itinérance (roaming). ' 
+                  'Veuillez noter que les tarifs des appels et de la data peuvent être différents. '
+                  'Certaines fonctionnalités de l\"application (comme les codes USSD) pourraient ne pas fonctionner correctement.'),
+              actions: <Widget>[
+                TextButton(
+                  child: const Text('OK'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      }
+    } catch (e) {
+      print("Error checking roaming status in HomeScreen: $e");
+      // Optionally show a less intrusive error message or log it
+    }
+  }
+
 
   void _onItemTapped(int index) {
     setState(() {
@@ -78,7 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'USSD',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.local_offer_outlined), // Add Offer Comparator icon
+            icon: Icon(Icons.local_offer_outlined),
             activeIcon: Icon(Icons.local_offer),
             label: 'Offres',
           ),
@@ -94,7 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
         currentIndex: _selectedIndex,
-        type: BottomNavigationBarType.fixed, // Use fixed type for 5 items
+        type: BottomNavigationBarType.fixed,
         onTap: _onItemTapped,
       ),
     );

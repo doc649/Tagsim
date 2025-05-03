@@ -3,6 +3,7 @@ import 'package:tagsim/screens/home_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dynamic_color/dynamic_color.dart'; // Import dynamic_color
 import 'package:tagsim/services/user_preferences.dart'; // Import UserPreferences
+import 'package:tagsim/services/notification_service.dart'; // Import NotificationService
 
 // Define default ColorSchemes (can be customized)
 final _defaultLightColorScheme = ColorScheme.fromSeed(seedColor: Colors.deepPurple);
@@ -14,6 +15,16 @@ final _defaultDarkColorScheme = ColorScheme.fromSeed(
 Future<void> main() async { // Make main async
   WidgetsFlutterBinding.ensureInitialized(); // Ensure bindings are initialized
   await UserPreferences.init(); // Initialize UserPreferences
+
+  // Initialize Notification Service and schedule notifications
+  try {
+    await NotificationService.initialize();
+    await NotificationService.scheduleDailyNotifications();
+  } catch (e) {
+    print("Error initializing or scheduling notifications: $e");
+    // Handle error appropriately, maybe log it
+  }
+
   runApp(const TagSimApp());
 }
 

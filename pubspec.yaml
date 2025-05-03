@@ -26,7 +26,7 @@ dependencies:
   dynamic_color: ^1.7.0        # Pour le thème dynamique Material You
   call_log: ^5.1.0
   connectivity_plus: ^6.1.4
-  telephony: ^0.2.0
+  flutter_local_notifications: ^19.1.0
 
 dev_dependencies:
   flutter_test:
