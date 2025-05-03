@@ -45,9 +45,8 @@ class _TagSimAppState extends State<TagSimApp> {
   }
 
   Future<void> _loadThemeMode() async {
-    // No need to get instance again, UserPreferences is initialized
-    // final prefs = await SharedPreferences.getInstance();
-    String themeModeStr = UserPreferences._preferences.getString('themeMode') ?? 'system'; // Access via UserPreferences
+    // Use the public static getter from UserPreferences
+    String themeModeStr = UserPreferences.getString('themeMode') ?? 'system';
     setState(() {
       _themeMode = ThemeMode.values.firstWhere(
         (e) => e.name == themeModeStr,
@@ -60,8 +59,8 @@ class _TagSimAppState extends State<TagSimApp> {
     setState(() {
       _themeMode = themeMode;
     });
-    // Save theme preference
-    UserPreferences._preferences.setString('themeMode', themeMode.name);
+    // Save theme preference using the public static setter
+    UserPreferences.setString('themeMode', themeMode.name);
   }
 
   @override

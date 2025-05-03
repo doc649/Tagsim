@@ -199,8 +199,6 @@ class NotificationService {
         scheduledDate,
         platformDetails,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents: DateTimeComponents.time, // Match time daily
       );
       print('Daily notification scheduled successfully.');
