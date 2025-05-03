@@ -1,4 +1,4 @@
-ext.kotlin_version = '2.1.21-RC'
+ext.kotlin_version = '2.2.0-Beta2'
 allprojects {
     repositories {
         google()
