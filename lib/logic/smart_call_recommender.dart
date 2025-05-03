@@ -1,4 +1,5 @@
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Import SharedPreferences
 import 'package:tagsim/utils/operator_detector.dart'; // Updated path
 import 'package:tagsim/services/user_preferences.dart';
 
@@ -10,22 +11,25 @@ enum SimChoice {
 }
 
 class SmartCallRecommender {
-  final OperatorDetector _operatorDetector;
+  // No need for an instance of OperatorDetector since methods are static
+  // final OperatorDetector _operatorDetector;
   Map<String, dynamic>? _tariffs;
 
-  SmartCallRecommender() : _operatorDetector = OperatorDetector();
+  // SmartCallRecommender() : _operatorDetector = OperatorDetector();
+  SmartCallRecommender(); // Constructor without instance
 
   // Load tariffs if not already loaded
   Future<void> _loadTariffsIfNeeded() async {
-    _tariffs ??= await _operatorDetector.loadTariffs();
+    // Call static method
+    _tariffs ??= await OperatorDetector.loadTariffs();
   }
 
   // Main method to get the best SIM recommendation
   Future<SimChoice> getBestSim(String destinationNumber) async {
     try {
       await _loadTariffsIfNeeded();
-      if (_tariffs == null) {
-        print('Error: Tariffs could not be loaded.');
+      if (_tariffs == null || _tariffs!.isEmpty) { // Check if tariffs are empty too
+        print('Error: Tariffs could not be loaded or are empty.');
         return SimChoice.error;
       }
 
@@ -42,13 +46,22 @@ class SmartCallRecommender {
 
       final int estimatedDuration = UserPreferences.getEstimatedDuration();
 
-      // --- Detect Destination Operator --- //
-      final String destinationOperator = _operatorDetector.detectOperator(destinationNumber);
-      // Note: OperatorDetector now handles the 'Inconnu' case internally for cost calculation
+      // Get SharedPreferences instance needed for calculateCallCost
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
 
-      // --- Calculate Base Costs (Per Minute) --- //
-      double sim1CostPerMinute = _operatorDetector.calculateCallCost('sim1', destinationOperator, _tariffs!);
-      double sim2CostPerMinute = _operatorDetector.calculateCallCost('sim2', destinationOperator, _tariffs!);
+      // --- Calculate Base Costs (Per Minute) using static method and named parameters --- //
+      double sim1CostPerMinute = await OperatorDetector.calculateCallCost(
+        tariffsData: _tariffs!,
+        callingSimId: 'sim1',
+        destinationNumber: destinationNumber,
+        prefs: prefs,
+      );
+      double sim2CostPerMinute = await OperatorDetector.calculateCallCost(
+        tariffsData: _tariffs!,
+        callingSimId: 'sim2',
+        destinationNumber: destinationNumber,
+        prefs: prefs,
+      );
 
       // --- Factor in Bonuses --- //
       bool sim1BonusApplies = _isBonusApplicable(sim1BonusType, sim1BonusAmount, sim1BonusValidityStr, estimatedDuration);
