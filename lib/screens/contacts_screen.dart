@@ -68,12 +68,18 @@ class _ContactsScreenState extends State<ContactsScreen> {
         Map<String, ContactWithDetails> uniqueContacts = {}; // Use Map to handle duplicates by contact ID
 
         for (var contact in contacts) {
-          if (contact.phones.isNotEmpty) {
-            // Use the first non-empty phone number for this contact
-            Phone? firstPhone = contact.phones.firstWhere((p) => p.number.isNotEmpty, orElse: () => null);
+          // Find the first non-empty phone number for this contact
+          Phone? firstValidPhone;
+          for (var phone in contact.phones) {
+            if (phone.number.isNotEmpty) {
+              firstValidPhone = phone;
+              break; // Found the first valid one, exit the inner loop
+            }
+          }
 
-            if (firstPhone != null && !uniqueContacts.containsKey(contact.id)) {
-              String phoneNumber = firstPhone.number;
+          // Only process if a valid phone was found and the contact is not already processed
+          if (firstValidPhone != null && !uniqueContacts.containsKey(contact.id)) {
+            String phoneNumber = firstValidPhone.number;
               String? countryCode;
               String? flagEmoji;
               AlgerianMobileOperator operator = AlgerianMobileOperator.Unknown;
