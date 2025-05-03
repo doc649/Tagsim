@@ -1,0 +1,58 @@
+[
+  {
+    "operator": "Mobilis",
+    "name": "Twenty (Édition Spéciale 20 ans)",
+    "price": "2000 DA",
+    "validity": "Mensuel",
+    "calls": "Illimités vers tous les réseaux nationaux",
+    "sms": "Illimités vers tous les réseaux nationaux",
+    "data": "80 Go",
+    "description": "Offre spéciale anniversaire avec appels, SMS et data généreux.",
+    "link": "https://www.mobilis.dz/"
+  },
+  {
+    "operator": "Djezzy",
+    "name": "LEGEND",
+    "price": "Variable (selon palier)",
+    "validity": "Mensuel",
+    "calls": "Illimités vers tous les réseaux nationaux",
+    "sms": "Inclus (détails variables)",
+    "data": "Jusqu'à 100 Go (selon palier)",
+    "description": "Offre premium avec appels illimités vers tous et un grand volume internet.",
+    "link": "https://www.djezzy.dz/particuliers/offres/djezzy-legend/"
+  },
+   {
+    "operator": "Djezzy",
+    "name": "HAYLA MAXI",
+    "price": "À partir de 1000 DA (ex: 2000 DA)",
+    "validity": "Mensuel",
+    "calls": "Illimités vers Djezzy + Crédit vers autres",
+    "sms": "Illimités vers Djezzy",
+    "data": "Volume variable selon le prix (ex: 60 Go pour 2000 DA)",
+    "description": "Offre équilibrée avec illimité Djezzy, crédit et data.",
+    "link": "https://www.djezzy.dz/particuliers/offres/djezzy-hayla-maxi/"
+  },
+  {
+    "operator": "Ooredoo",
+    "name": "Dima+",
+    "price": "2000 DA",
+    "validity": "Mensuel",
+    "calls": "Illimités vers tous les réseaux nationaux",
+    "sms": "Inclus (à vérifier)",
+    "data": "60 Go",
+    "description": "Offre sans engagement avec appels illimités vers tous et data confortable.",
+    "link": "https://www.ooredoo.dz/"
+  },
+  {
+    "operator": "Ooredoo",
+    "name": "MAXY Hadra / MAXY Internet",
+    "price": "Variable (ex: 500 DA, 1000 DA)",
+    "validity": "Variable (7 jours, 30 jours)",
+    "calls": "Illimités vers Ooredoo + Crédit vers autres",
+    "sms": "Inclus (à vérifier)",
+    "data": "Volume variable selon le prix",
+    "description": "Offres prépayées flexibles avec illimité Ooredoo, crédit et data.",
+    "link": "https://www.ooredoo.dz/"
+  }
+]
+

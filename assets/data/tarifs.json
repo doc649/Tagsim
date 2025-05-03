@@ -1,0 +1,51 @@
+{
+  "sim1": {
+    "operator": "Unknown", // To be configured by user (e.g., "Mobilis", "Djezzy", "Ooredoo")
+    "tariffs_per_minute": {
+      "Mobilis": 10.00, // Default/Placeholder cost per minute in DA
+      "Djezzy": 10.00,
+      "Ooredoo": 10.00,
+      "Unknown": 10.00, // Default for unknown or other operators
+      "International": 50.00, // Placeholder
+      "Roaming": 100.00 // Placeholder
+    }
+  },
+  "sim2": {
+    "operator": "Unknown", // To be configured by user
+    "tariffs_per_minute": {
+      "Mobilis": 10.00,
+      "Djezzy": 10.00,
+      "Ooredoo": 10.00,
+      "Unknown": 10.00,
+      "International": 50.00,
+      "Roaming": 100.00
+    }
+  },
+  "operator_tariffs": { // Standard tariffs based on calling operator
+    "Mobilis": {
+        "Mobilis": 7.96, // Updated based on user input (3.98 * 2)
+        "Djezzy": 7.96,
+        "Ooredoo": 7.96,
+        "Unknown": 7.96 // Use same rate as default
+    },
+    "Djezzy": {
+        "Mobilis": 9.98, // Updated based on user input (4.99 * 2)
+        "Djezzy": 9.98,
+        "Ooredoo": 9.98,
+        "Unknown": 9.98
+    },
+    "Ooredoo": {
+        "Mobilis": 10.00, // Updated based on user input (5.00 * 2)
+        "Djezzy": 10.00,
+        "Ooredoo": 10.00,
+        "Unknown": 10.00
+    },
+     "Unknown": { // Fallback if calling SIM operator is unknown
+        "Mobilis": 10.00, // Use a general average/default
+        "Djezzy": 10.00,
+        "Ooredoo": 10.00,
+        "Unknown": 10.00
+    }
+  }
+}
+

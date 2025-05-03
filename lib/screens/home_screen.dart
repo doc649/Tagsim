@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:tagsim/screens/contacts_screen.dart';
 import 'package:tagsim/screens/ussd_codes_screen.dart';
 import 'package:tagsim/screens/settings_screen.dart';
+import 'package:tagsim/screens/dashboard_screen.dart';
+import 'package:tagsim/screens/offer_comparator_screen.dart'; // Import the offer comparator screen
 
 class HomeScreen extends StatefulWidget {
-  final Function(ThemeMode) onThemeChanged; // Add callback parameter
+  final Function(ThemeMode) onThemeChanged;
 
-  const HomeScreen({super.key, required this.onThemeChanged}); // Require callback
+  const HomeScreen({super.key, required this.onThemeChanged});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -15,24 +17,26 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
-  // Define the screens for each tab - must be initialized dynamically if passing parameters
   late final List<Widget> _widgetOptions;
 
-  // Define titles for each screen
-  static const List<String> _appBarTitles = <String>[
-    'Contacts',
-    'Codes USSD',
-    'Paramètres',
-  ];
+  // Define titles for each screen (optional)
+  // static const List<String> _appBarTitles = <String>[
+  //   'Contacts',
+  //   'Codes USSD',
+  //   'Offres',
+  //   'Dashboard',
+  //   'Paramètres',
+  // ];
 
   @override
   void initState() {
     super.initState();
-    // Initialize _widgetOptions here to access widget.onThemeChanged
     _widgetOptions = <Widget>[
       const ContactsScreen(),
       const UssdCodesScreen(),
-      SettingsScreen(onThemeChanged: widget.onThemeChanged), // Pass callback here
+      const OfferComparatorScreen(), // Add OfferComparatorScreen here
+      const DashboardScreen(),
+      SettingsScreen(onThemeChanged: widget.onThemeChanged),
     ];
   }
 
@@ -46,19 +50,17 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        // Display the logo
         title: Row(
           children: [
             Image.asset(
               'assets/images/app_logo_final.png',
-              height: 40, // Adjust height to fit AppBar
-              errorBuilder: (context, error, stackTrace) => Icon(Icons.sim_card_outlined, color: Theme.of(context).colorScheme.onPrimary), // Fallback icon (modernized)
+              height: 40,
+              errorBuilder: (context, error, stackTrace) => Icon(Icons.sim_card_outlined, color: Theme.of(context).colorScheme.onPrimary),
             ),
             // const SizedBox(width: 8),
-            // Text(_appBarTitles[_selectedIndex]), // Optionally show screen title too
+            // Text(_appBarTitles[_selectedIndex]), // Optionally show screen title
           ],
         ),
-        // AppBar theme is handled by the main theme
       ),
       body: Center(
         child: _widgetOptions.elementAt(_selectedIndex),
@@ -66,26 +68,33 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
-            icon: Icon(Icons.contacts_outlined), // Modernized icon
-            activeIcon: Icon(Icons.contacts), // Optional: Filled icon when active
+            icon: Icon(Icons.contacts_outlined),
+            activeIcon: Icon(Icons.contacts),
             label: 'Contacts',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.dialpad_outlined), // Modernized icon
+            icon: Icon(Icons.dialpad_outlined),
             activeIcon: Icon(Icons.dialpad),
             label: 'USSD',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.settings_outlined), // Modernized icon
+            icon: Icon(Icons.local_offer_outlined), // Add Offer Comparator icon
+            activeIcon: Icon(Icons.local_offer),
+            label: 'Offres',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard_outlined),
+            activeIcon: Icon(Icons.dashboard),
+            label: 'Dashboard',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings_outlined),
             activeIcon: Icon(Icons.settings),
             label: 'Paramètres',
           ),
         ],
         currentIndex: _selectedIndex,
-        type: BottomNavigationBarType.fixed,
-        // Let the theme handle colors
-        // selectedItemColor: Theme.of(context).colorScheme.primary,
-        // unselectedItemColor: Theme.of(context).colorScheme.onSurfaceVariant,
+        type: BottomNavigationBarType.fixed, // Use fixed type for 5 items
         onTap: _onItemTapped,
       ),
     );

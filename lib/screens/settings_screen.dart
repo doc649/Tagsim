@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:package_info_plus/package_info_plus.dart'; // Need to add this dependency
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:tagsim/screens/bonus_config_screen.dart'; // Import the bonus screen
 
 class SettingsScreen extends StatefulWidget {
   final Function(ThemeMode) onThemeChanged; // Callback to change theme in main app
@@ -25,13 +26,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _loadPreferences() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      // Use ThemeMode.system as default if no preference is set
-      _isDarkMode = (prefs.getString('themeMode') ?? 'system') == 'dark';
-      // If system is default, check system brightness (optional, complex)
-      // For simplicity, we just store 'light', 'dark', or 'system'.
-      // Let's refine: store ThemeMode enum string directly.
       String themeModeStr = prefs.getString('themeMode') ?? 'system';
-      _isDarkMode = themeModeStr == 'dark'; // Simple toggle state
+      _isDarkMode = themeModeStr == 'dark';
     });
   }
 
@@ -52,11 +48,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _toggleTheme(bool isDark) async {
     final prefs = await SharedPreferences.getInstance();
     ThemeMode newMode = isDark ? ThemeMode.dark : ThemeMode.light;
-    await prefs.setString('themeMode', newMode.name); // Store 'light' or 'dark'
+    await prefs.setString('themeMode', newMode.name);
     setState(() {
       _isDarkMode = isDark;
     });
-    widget.onThemeChanged(newMode); // Notify main app
+    widget.onThemeChanged(newMode);
   }
 
   void _showAboutDialog() {
@@ -64,12 +60,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       applicationName: 'TagSim',
       applicationVersion: _appVersion,
-      applicationIcon: Image.asset('assets/logos/mobilis_logo.png', height: 40), // Placeholder icon
+      // Use the actual app logo now
+      applicationIcon: Image.asset('assets/images/app_logo_final.png', height: 40),
       applicationLegalese: '© 2025 Votre Nom/Société',
       children: <Widget>[
         const Padding(
           padding: EdgeInsets.only(top: 15),
-          child: Text('Application de gestion SIM et codes USSD pour l\Algérie.'),
+          child: Text('Application de gestion SIM et codes USSD pour l\'Algérie.'),
         )
       ],
     );
@@ -78,21 +75,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // appBar: AppBar(title: Text('Paramètres')), // Removed to integrate with main AppBar
       body: ListView(
         children: <Widget>[
           SwitchListTile(
-            secondary: const Icon(Icons.color_lens),
+            secondary: const Icon(Icons.color_lens_outlined),
             title: const Text('Mode Sombre'),
             subtitle: const Text('Activer le thème sombre'),
             value: _isDarkMode,
             onChanged: _toggleTheme,
           ),
+          // Add Bonus/Credit Management Tile
           ListTile(
-            leading: const Icon(Icons.sim_card),
-            title: const Text('Affichage Opérateur'),
-            subtitle: Text('Gérer l\'affichage des infos opérateur'),
+            leading: const Icon(Icons.card_giftcard_outlined),
+            title: const Text('Bonus & Crédits'),
+            subtitle: const Text('Gérer le crédit et la data restants'),
+            trailing: const Icon(Icons.chevron_right),
             onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const BonusConfigScreen()),
+              );
+            },
+          ),
+          // Existing Tiles
+          ListTile(
+            leading: const Icon(Icons.sim_card_outlined),
+            title: const Text('Configuration SIM'),
+            subtitle: const Text('Définir l\'opérateur de chaque SIM'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              // TODO: Implement SIM configuration screen
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Fonctionnalité non implémentée.')),
               );
@@ -102,6 +114,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             leading: const Icon(Icons.info_outline),
             title: const Text('À Propos'),
             subtitle: Text(_appVersion),
+            trailing: const Icon(Icons.chevron_right),
             onTap: _showAboutDialog,
           ),
         ],

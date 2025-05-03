@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:tagsim/screens/home_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dynamic_color/dynamic_color.dart'; // Import dynamic_color
+import 'package:tagsim/services/user_preferences.dart'; // Import UserPreferences
 
 // Define default ColorSchemes (can be customized)
 final _defaultLightColorScheme = ColorScheme.fromSeed(seedColor: Colors.deepPurple);
@@ -10,7 +11,9 @@ final _defaultDarkColorScheme = ColorScheme.fromSeed(
   brightness: Brightness.dark,
 );
 
-void main() {
+Future<void> main() async { // Make main async
+  WidgetsFlutterBinding.ensureInitialized(); // Ensure bindings are initialized
+  await UserPreferences.init(); // Initialize UserPreferences
   runApp(const TagSimApp());
 }
 
@@ -31,8 +34,9 @@ class _TagSimAppState extends State<TagSimApp> {
   }
 
   Future<void> _loadThemeMode() async {
-    final prefs = await SharedPreferences.getInstance();
-    String themeModeStr = prefs.getString('themeMode') ?? 'system';
+    // No need to get instance again, UserPreferences is initialized
+    // final prefs = await SharedPreferences.getInstance();
+    String themeModeStr = UserPreferences._preferences.getString('themeMode') ?? 'system'; // Access via UserPreferences
     setState(() {
       _themeMode = ThemeMode.values.firstWhere(
         (e) => e.name == themeModeStr,
@@ -45,6 +49,8 @@ class _TagSimAppState extends State<TagSimApp> {
     setState(() {
       _themeMode = themeMode;
     });
+    // Save theme preference
+    UserPreferences._preferences.setString('themeMode', themeMode.name);
   }
 
   @override
