@@ -13,7 +13,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up JDK 11
+      # Set up JDK 17 - this action also sets environment variables like JAVA_HOME_17_X64
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
@@ -32,6 +33,9 @@ jobs:
       #   run: flutter test
 
       - name: Build APK
+        # Explicitly set JAVA_HOME for this step using the output from setup-java
+        env:
+          JAVA_HOME: ${{ env.JAVA_HOME_17_X64 }}
         run: flutter build apk --release
         # The output APK is typically in build/app/outputs/flutter-apk/app-release.apk
 
