@@ -18,6 +18,12 @@ class UserPreferences {
   static Future init() async =>
       _preferences = await SharedPreferences.getInstance();
 
+  // --- Generic Getters/Setters (Added for flexibility) --- //
+  static String? getString(String key) => _preferences.getString(key);
+
+  static Future setString(String key, String value) async =>
+      await _preferences.setString(key, value);
+
   // --- SIM 1 --- //
   static Future setSim1Credit(double credit) async =>
       await _preferences.setDouble(_keySim1Credit, credit);
