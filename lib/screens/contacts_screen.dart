@@ -128,11 +128,11 @@ class _ContactsScreenState extends State<ContactsScreen> {
   String? _getOperatorLogoPath(AlgerianMobileOperator operator) {
     switch (operator) {
       case AlgerianMobileOperator.Djezzy:
-        return 'assets/logos/djezzy_logo.png';
+        return 'assets/images/djezzy_logo.png';
       case AlgerianMobileOperator.Mobilis:
-        return 'assets/logos/mobilis_logo.png';
+        return 'assets/images/mobilis_logo.png';
       case AlgerianMobileOperator.Ooredoo:
-        return 'assets/logos/ooredoo_logo.png';
+        return 'assets/images/ooredoo_logo.png';
       case AlgerianMobileOperator.Unknown:
       default:
         return null;

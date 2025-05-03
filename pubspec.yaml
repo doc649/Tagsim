@@ -36,6 +36,7 @@ flutter:
 
   assets:
     - assets/logos/
+    - assets/images/
     - assets/ussd_data.json
     - assets/logos/generated_app_logo.png
 

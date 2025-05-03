@@ -50,8 +50,8 @@ class _HomeScreenState extends State<HomeScreen> {
         title: Row(
           children: [
             Image.asset(
-              'assets/logos/generated_app_logo.png',
-              height: 30, // Adjust height to fit AppBar
+              'assets/images/app_logo_final.png',
+              height: 40, // Adjust height to fit AppBar
               errorBuilder: (context, error, stackTrace) => Icon(Icons.sim_card_outlined, color: Theme.of(context).colorScheme.onPrimary), // Fallback icon (modernized)
             ),
             // const SizedBox(width: 8),
