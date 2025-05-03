@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:tagsim/screens/contacts_screen.dart';
-import 'package:tagsim/screens/call_log_screen.dart'; // To be created
-import 'package:tagsim/screens/ussd_codes_screen.dart'; // To be created
+import 'package:tagsim/screens/call_log_screen.dart';
+import 'package:tagsim/screens/ussd_codes_screen.dart';
 import 'package:tagsim/screens/settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final Function(ThemeMode) onThemeChanged; // Add callback parameter
+
+  const HomeScreen({super.key, required this.onThemeChanged}); // Require callback
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -14,13 +16,20 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
-  // Define the screens for each tab
-  static const List<Widget> _widgetOptions = <Widget>[
-    ContactsScreen(),
-    CallLogScreen(), // Placeholder for Call Log
-    UssdCodesScreen(), // Placeholder for USSD Codes
-    SettingsScreen(),
-  ];
+  // Define the screens for each tab - must be initialized dynamically if passing parameters
+  late final List<Widget> _widgetOptions;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize _widgetOptions here to access widget.onThemeChanged
+    _widgetOptions = <Widget>[
+      const ContactsScreen(),
+      const CallLogScreen(),
+      const UssdCodesScreen(),
+      SettingsScreen(onThemeChanged: widget.onThemeChanged), // Pass callback here
+    ];
+  }
 
   void _onItemTapped(int index) {
     setState(() {

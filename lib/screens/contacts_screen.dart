@@ -245,6 +245,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
         return ListTile(
           title: Text(contact.displayName.isNotEmpty ? contact.displayName : '(Sans nom)'),
           subtitle: Row(
+            crossAxisAlignment: CrossAxisAlignment.center, // Center items vertically
             children: [
               if (details.countryFlagEmoji != null)
                 Padding(
@@ -257,7 +258,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
                   padding: const EdgeInsets.only(left: 8.0),
                   child: Image.asset(
                     logoPath,
-                    height: 16, // Adjust height as needed
+                    height: 24, // Adjust height as needed
                     errorBuilder: (context, error, stackTrace) => const Icon(Icons.error, size: 16), // Fallback icon
                   ),
                 ),
