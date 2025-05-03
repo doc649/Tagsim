@@ -55,12 +55,12 @@ class _TagSimAppState extends State<TagSimApp> {
     });
   }
 
-  void _changeTheme(ThemeMode themeMode) {
+  void _changeTheme(ThemeMode themeMode) async { // Make async
     setState(() {
       _themeMode = themeMode;
     });
     // Save theme preference using the public static setter
-    UserPreferences.setString('themeMode', themeMode.name);
+    await UserPreferences.setString("themeMode", themeMode.name); // Add await
   }
 
   @override

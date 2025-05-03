@@ -78,7 +78,7 @@ class NotificationService {
     // Request permission for iOS (older versions might need this explicitly)
     await _notificationsPlugin
         .resolvePlatformSpecificImplementation<
-            IOSFlutterLocalNotificationsPlugin>()
+            DarwinFlutterLocalNotificationsPlugin>() // Use Darwin instead of IOS
         ?.requestPermissions(
           alert: true,
           badge: true,
@@ -199,6 +199,7 @@ class NotificationService {
         scheduledDate,
         platformDetails,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime, // Added for iOS
         matchDateTimeComponents: DateTimeComponents.time, // Match time daily
       );
       print('Daily notification scheduled successfully.');
