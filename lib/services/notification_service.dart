@@ -182,15 +182,14 @@ class NotificationService {
       iOS: iosDetails,
     );
 
-    // Schedule for 5 seconds from now for testing
+    // Schedule for tomorrow at a specific time (e.g., 9 AM)
     final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
-    // tz.TZDateTime scheduledDate = tz.TZDateTime(tz.local, now.year, now.month, now.day, 9); // 9 AM today
-    // if (scheduledDate.isBefore(now)) {
-    //   scheduledDate = scheduledDate.add(const Duration(days: 1)); // If 9 AM passed, schedule for tomorrow
-    // }
-    tz.TZDateTime scheduledDate = now.add(const Duration(seconds: 5)); // Schedule 5 seconds from now
+    tz.TZDateTime scheduledDate = tz.TZDateTime(tz.local, now.year, now.month, now.day, 9); // 9 AM today
+    if (scheduledDate.isBefore(now)) {
+      scheduledDate = scheduledDate.add(const Duration(days: 1)); // If 9 AM passed, schedule for tomorrow
+    }
 
-    print("Scheduling IMMEDIATE notification for testing: $scheduledDate");
+    print("Scheduling notification for: $scheduledDate");
 
     try {
       await _notificationsPlugin.zonedSchedule(
