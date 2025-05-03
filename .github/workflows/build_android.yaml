@@ -26,8 +26,22 @@ jobs:
         with:
           channel: 'stable' # Use stable channel, or match project's channel
 
-      - name: Install dependencies
+      # Set up Node.js to use patch-package
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # Or a version compatible with patch-package
+
+      - name: Install Flutter dependencies
         run: flutter pub get
+
+      # Install Node.js dependencies (including patch-package)
+      - name: Install Node dependencies
+        run: npm install
+
+      # Apply patches using patch-package
+      - name: Apply patches
+        run: npx patch-package --patch-dir patches
 
       # Optional: Run tests
       # - name: Run tests

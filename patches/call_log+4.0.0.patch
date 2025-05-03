@@ -1,0 +1,10 @@
+--- /home/ubuntu/tagsim_patch_temp/build.gradle.original	2025-05-03 02:31:31.562214357 -0400
++++ /home/ubuntu/tagsim_patch_temp/build.gradle.corrected	2025-05-03 02:31:14.875105214 -0400
+@@ -23,6 +23,7 @@
+ 
+ android {
+     compileSdkVersion 28
++    namespace 'sk.fourq.calllog'
+ 
+     defaultConfig {
+         minSdkVersion 16
