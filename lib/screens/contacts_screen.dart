@@ -76,6 +76,21 @@ class _ContactsScreenState extends State<ContactsScreen> {
     return null;
   }
 
+  // --- Helper Function to Format Number for Display ---
+  String _formatPhoneNumberForDisplay(String? normalizedNumber) {
+    if (normalizedNumber == null) {
+      return '(Numéro invalide)';
+    }
+    // Check if it's an Algerian number (+213 followed by 9 digits)
+    if (normalizedNumber.startsWith('+213') && normalizedNumber.length == 13) {
+      // Format to local: 0 followed by the 9 digits
+      return '0${normalizedNumber.substring(4)}';
+    }
+    // Otherwise, return the normalized number as is (for international numbers)
+    return normalizedNumber;
+  }
+  // ---------------------------------------------------
+
   Future<void> _fetchContacts() async {
     PermissionStatus status = await Permission.contacts.request();
 
@@ -100,9 +115,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
               String rawPhoneNumber = phone.number;
               String contactName = contact.displayName.isNotEmpty ? contact.displayName : "(No Name)"; // Get contact name or placeholder
 
-              // --- Log before normalization ---
               print("DEBUG_CONTACT: Processing RawPhone='$rawPhoneNumber', ContactName='$contactName', ContactID='${contact.id}'");
-              // --------------------------------
 
               String? normalizedNumber = await _normalizePhoneNumber(rawPhoneNumber);
 
@@ -111,12 +124,10 @@ class _ContactsScreenState extends State<ContactsScreen> {
                  continue;
               }
 
-              // --- Explicit Duplicate Check using Set ---
               if (processedNormalizedNumbersSet.contains(normalizedNumber)) {
                 print("DEBUG_CONTACT: Skipping duplicate normalized number (Set check): Norm='$normalizedNumber', Raw='$rawPhoneNumber', Contact='$contactName'");
                 continue;
               }
-              // -----------------------------------------
 
               processedNormalizedNumbersSet.add(normalizedNumber);
               print("DEBUG_CONTACT: Processing unique number: Norm='$normalizedNumber', Raw='$rawPhoneNumber', Contact='$contactName'");
@@ -152,7 +163,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
 
               uniqueContactsByNumberMap[normalizedNumber] = ContactWithDetails(
                 contact: contact,
-                phoneNumber: normalizedNumber,
+                phoneNumber: normalizedNumber, // Store normalized number internally
                 countryCode: countryCode,
                 countryFlagEmoji: flagEmoji,
                 operatorInfo: operator,
@@ -165,11 +176,9 @@ class _ContactsScreenState extends State<ContactsScreen> {
         }
 
         processedContacts = uniqueContactsByNumberMap.values.toList();
-        // Sort primarily by name, then by number for contacts without names
         processedContacts.sort((a, b) {
           int nameCompare = a.contact.displayName.toLowerCase().compareTo(b.contact.displayName.toLowerCase());
           if (nameCompare == 0) {
-            // If names are the same (or both empty), sort by phone number
             return (a.phoneNumber ?? '').compareTo(b.phoneNumber ?? '');
           }
           return nameCompare;
@@ -203,8 +212,10 @@ class _ContactsScreenState extends State<ContactsScreen> {
     String query = _searchController.text.toLowerCase();
     setState(() {
       _filteredContactsWithDetails = _allContactsWithDetails.where((details) {
+        // Search in display name OR formatted phone number
+        final formattedNumberForSearch = _formatPhoneNumberForDisplay(details.phoneNumber);
         final nameMatch = details.contact.displayName.toLowerCase().contains(query);
-        final numberMatch = details.phoneNumber?.toLowerCase().contains(query) ?? false;
+        final numberMatch = formattedNumberForSearch.toLowerCase().contains(query);
         return nameMatch || numberMatch;
       }).toList();
     });
@@ -276,7 +287,6 @@ class _ContactsScreenState extends State<ContactsScreen> {
       case SimChoice.error:
         iconData = Icons.error_outline;
         iconColor = Colors.orange;
-        // Use the detailed error message from the recommender logic
         tooltip = errorMsg ?? 'Erreur inconnue de recommandation';
         break;
     }
@@ -373,10 +383,13 @@ class _ContactsScreenState extends State<ContactsScreen> {
         final details = _filteredContactsWithDetails[index];
         final contact = details.contact;
         final logoPath = _getOperatorLogoPath(details.operatorInfo);
-        final phoneNumber = details.phoneNumber; // Normalized number
+        final phoneNumber = details.phoneNumber; // Normalized number stored internally
 
-        // Determine display name: Use contact name if available, otherwise use the phone number
-        final String displayName = contact.displayName.isNotEmpty ? contact.displayName : (phoneNumber ?? '(Numéro inconnu)');
+        // Format number for display (Algerian -> 0..., others -> as is)
+        final String formattedPhoneNumber = _formatPhoneNumberForDisplay(phoneNumber);
+
+        // Determine display name: Use contact name if available, otherwise use the FORMATTED phone number
+        final String displayName = contact.displayName.isNotEmpty ? contact.displayName : formattedPhoneNumber;
         final String leadingText = contact.displayName.isNotEmpty ? contact.displayName[0].toUpperCase() : '#'; // Use '#' for contacts without name
 
         return ListTile(
@@ -392,15 +405,13 @@ class _ContactsScreenState extends State<ContactsScreen> {
                   padding: const EdgeInsets.only(right: 4.0),
                   child: Text(details.countryFlagEmoji!, style: const TextStyle(fontSize: 16)),
                 ),
-              // --- Corrected Subtitle Logic ---
-              // Display normalized number in subtitle only if name is present
+              // Display FORMATTED number in subtitle only if name is present
               if (contact.displayName.isNotEmpty)
-                 Expanded(child: Text(phoneNumber ?? 'Numéro invalide')),
+                 Expanded(child: Text(formattedPhoneNumber)), // Use formatted number
               // If no name, the number is already in the title, so don't repeat in subtitle
-              // We can show a placeholder or nothing
               if (contact.displayName.isEmpty)
                  const Expanded(child: SizedBox.shrink()), // Show nothing if name is empty
-              // -----------------------------------
+
               _buildRecommendationIndicator(details),
               if (logoPath != null)
                 Padding(
@@ -413,7 +424,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
                 ),
             ],
           ),
-          trailing: phoneNumber != null
+          trailing: phoneNumber != null // Use normalized number for actions
               ? Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
