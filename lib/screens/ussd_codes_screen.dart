@@ -201,7 +201,10 @@ class _UssdCodesScreenState extends State<UssdCodesScreen>
             : TabBar(
                 controller: _tabController,
                 isScrollable: true,
-                tabs: _ussdData.map((op) => Tab(text: op['operator'])).toList(),
+                labelColor: Theme.of(context).colorScheme.onPrimary, // Couleur du texte de l'onglet sélectionné
+                unselectedLabelColor: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7), // Couleur du texte des onglets non sélectionnés
+                indicatorColor: Theme.of(context).colorScheme.onPrimary, // Couleur de l'indicateur
+                tabs: _ussdData.map((op) => Tab(text: op["operator"])).toList(),
               ),
       ),
       body: _isLoading
