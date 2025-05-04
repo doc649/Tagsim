@@ -16,7 +16,7 @@
     "operator": "Djezzy",
     "name": "LEGEND",
     "price": "Variable (selon palier)",
-    "price_numeric": 2500, // Assuming a high-end price for sorting
+    "price_numeric": 2500,
     "validity": "Mensuel",
     "calls": "Illimités vers tous les réseaux nationaux",
     "sms": "Inclus (détails variables)",
@@ -55,7 +55,7 @@
     "operator": "Ooredoo",
     "name": "MAXY Hadra / MAXY Internet",
     "price": "Variable (ex: 500 DA, 1000 DA)",
-    "price_numeric": 1000, // Assuming a mid-range price for sorting
+    "price_numeric": 1000,
     "validity": "Variable (7 jours, 30 jours)",
     "calls": "Illimités vers Ooredoo + Crédit vers autres",
     "sms": "Inclus (à vérifier)",
