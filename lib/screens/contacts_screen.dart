@@ -76,20 +76,9 @@ class _ContactsScreenState extends State<ContactsScreen> {
     return null;
   }
 
-  // --- Helper Function to Format Number for Display ---
-  String _formatPhoneNumberForDisplay(String? normalizedNumber) {
-    if (normalizedNumber == null) {
-      return '(Numéro invalide)';
-    }
-    // Check if it's an Algerian number (+213 followed by 9 digits)
-    if (normalizedNumber.startsWith('+213') && normalizedNumber.length == 13) {
-      // Format to local: 0 followed by the 9 digits
-      return '0${normalizedNumber.substring(4)}';
-    }
-    // Otherwise, return the normalized number as is (for international numbers)
-    return normalizedNumber;
-  }
-  // ---------------------------------------------------
+  // --- Reverted Display Formatting - Keep +213 for now ---
+  // String _formatPhoneNumberForDisplay(String? normalizedNumber) { ... }
+  // ------------------------------------------------------
 
   Future<void> _fetchContacts() async {
     PermissionStatus status = await Permission.contacts.request();
@@ -113,7 +102,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
           for (var phone in contact.phones) {
             if (phone.number.isNotEmpty) {
               String rawPhoneNumber = phone.number;
-              String contactName = contact.displayName.isNotEmpty ? contact.displayName : "(No Name)"; // Get contact name or placeholder
+              String contactName = contact.displayName.isNotEmpty ? contact.displayName : "(No Name)";
 
               print("DEBUG_CONTACT: Processing RawPhone='$rawPhoneNumber', ContactName='$contactName', ContactID='${contact.id}'");
 
@@ -190,11 +179,11 @@ class _ContactsScreenState extends State<ContactsScreen> {
             _filteredContactsWithDetails = processedContacts;
           });
         }
-      } catch (e) {
-        print('Error fetching or processing contacts: $e');
+      } catch (e, stacktrace) { // Added stacktrace
+        print('Error fetching or processing contacts: $e\n$stacktrace'); // Print stacktrace
          if (mounted) {
             setState(() {
-              // Handle error state if needed
+              // Optionally set an error state here to display a message
             });
          }
       }
@@ -212,10 +201,9 @@ class _ContactsScreenState extends State<ContactsScreen> {
     String query = _searchController.text.toLowerCase();
     setState(() {
       _filteredContactsWithDetails = _allContactsWithDetails.where((details) {
-        // Search in display name OR formatted phone number
-        final formattedNumberForSearch = _formatPhoneNumberForDisplay(details.phoneNumber);
+        // Search in display name OR NORMALIZED phone number (reverted from formatted)
         final nameMatch = details.contact.displayName.toLowerCase().contains(query);
-        final numberMatch = formattedNumberForSearch.toLowerCase().contains(query);
+        final numberMatch = details.phoneNumber?.toLowerCase().contains(query) ?? false;
         return nameMatch || numberMatch;
       }).toList();
     });
@@ -385,11 +373,11 @@ class _ContactsScreenState extends State<ContactsScreen> {
         final logoPath = _getOperatorLogoPath(details.operatorInfo);
         final phoneNumber = details.phoneNumber; // Normalized number stored internally
 
-        // Format number for display (Algerian -> 0..., others -> as is)
-        final String formattedPhoneNumber = _formatPhoneNumberForDisplay(phoneNumber);
+        // Reverted: Use normalized number directly for display for now
+        final String numberToDisplay = phoneNumber ?? '(Numéro invalide)';
 
-        // Determine display name: Use contact name if available, otherwise use the FORMATTED phone number
-        final String displayName = contact.displayName.isNotEmpty ? contact.displayName : formattedPhoneNumber;
+        // Determine display name: Use contact name if available, otherwise use the NORMALIZED phone number
+        final String displayName = contact.displayName.isNotEmpty ? contact.displayName : numberToDisplay;
         final String leadingText = contact.displayName.isNotEmpty ? contact.displayName[0].toUpperCase() : '#'; // Use '#' for contacts without name
 
         return ListTile(
@@ -405,9 +393,9 @@ class _ContactsScreenState extends State<ContactsScreen> {
                   padding: const EdgeInsets.only(right: 4.0),
                   child: Text(details.countryFlagEmoji!, style: const TextStyle(fontSize: 16)),
                 ),
-              // Display FORMATTED number in subtitle only if name is present
+              // Display NORMALIZED number in subtitle only if name is present
               if (contact.displayName.isNotEmpty)
-                 Expanded(child: Text(formattedPhoneNumber)), // Use formatted number
+                 Expanded(child: Text(numberToDisplay)), // Use normalized number
               // If no name, the number is already in the title, so don't repeat in subtitle
               if (contact.displayName.isEmpty)
                  const Expanded(child: SizedBox.shrink()), // Show nothing if name is empty
