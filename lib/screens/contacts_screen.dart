@@ -515,7 +515,6 @@ class _ContactsScreenState extends State<ContactsScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: TextField(
               controller: _searchController,
-              style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black), // Force text color
               decoration: InputDecoration(
                 hintText: 'Rechercher des contacts...',
                 prefixIcon: const Icon(Icons.search),
