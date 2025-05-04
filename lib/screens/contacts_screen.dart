@@ -155,17 +155,34 @@ class _ContactsScreenState extends State<ContactsScreen> {
               }
               print("FETCH_CONTACTS:     Normalized to '$normalizedNumber'");
 
-              if (processedNormalizedNumbersSet.contains(normalizedNumber)) {
-                print("FETCH_CONTACTS:     Skipping duplicate normalized number (Set check): Norm='$normalizedNumber', Raw='$rawPhoneNumber', Contact='${contact.displayName}'");
-                continue;
+              // Vérifier si une entrée existe déjà et si on doit la mettre à jour
+              ContactWithDetails? existingDetails = uniqueContactsByNumberMap[normalizedNumber];
+              bool shouldProcessThisContact = true; // On traite sauf si on saute explicitement
+
+              if (existingDetails != null) {
+                // Numéro dupliqué trouvé
+                bool contactHasName = contact.displayName.isNotEmpty;
+                bool existingHasName = existingDetails.contact.displayName.isNotEmpty;
+
+                if (contactHasName && !existingHasName) {
+                  // Le contact actuel a un nom, l'existant n'en avait pas. On priorise celui avec nom.
+                  print("FETCH_CONTACTS:     Prioritizing contact with name for '$normalizedNumber'. Replacing previous entry (Name: '${contact.displayName}', Prev Name: '${existingDetails.contact.displayName}')");
+                  // On laisse shouldProcessThisContact à true pour écraser l'entrée plus bas
+                } else {
+                  // On garde l'entrée existante (soit elle avait déjà un nom, soit le nouveau n'en a pas)
+                  print("FETCH_CONTACTS:     Skipping duplicate '$normalizedNumber'. Existing entry is preferred (Existing Name: '${existingDetails.contact.displayName}', Current Name: '${contact.displayName}')");
+                  shouldProcessThisContact = false; // On saute le traitement de ce contact
+                }
+              } else {
+                 print("FETCH_CONTACTS:     Processing unique number: Norm='$normalizedNumber'");
+                 // On laisse shouldProcessThisContact à true
               }
 
-              processedNormalizedNumbersSet.add(normalizedNumber);
-              print("FETCH_CONTACTS:     Processing unique number: Norm='$normalizedNumber'");
-
-              String? countryCode;
-              String? flagEmoji;
-              AlgerianMobileOperator operator = AlgerianMobileOperator.Unknown;
+              // On continue seulement si c'est un nouveau numéro ou si une mise à jour est nécessaire
+              if (shouldProcessThisContact) {
+                  String? countryCode;
+                  String? flagEmoji;
+                  AlgerianMobileOperator operator = AlgerianMobileOperator.Unknown;
 
               try {
                 print("FETCH_CONTACTS:       Getting region info for '$normalizedNumber'...");
