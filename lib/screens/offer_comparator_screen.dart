@@ -219,7 +219,7 @@ class _OfferComparatorScreenState extends State<OfferComparatorScreen> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0), // Reduced vertical padding
           child: TextField(
             controller: _searchController,
             style: const TextStyle(color: Colors.black87), // Force darker text color
@@ -232,18 +232,21 @@ class _OfferComparatorScreenState extends State<OfferComparatorScreen> {
               ),
               filled: true,
               fillColor: Colors.grey[200],
+              contentPadding: const EdgeInsets.symmetric(vertical: 10.0), // Reduce height of TextField itself
             ),
           ),
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0), // Reduced vertical padding
           child: Wrap( // Use Wrap for filters/sorts
-            spacing: 8.0,
-            runSpacing: 4.0,
+            spacing: 4.0, // Reduced spacing
+            runSpacing: 0.0, // Reduced runSpacing
             children: [
               // Operator Filters
               ...allOperators.map((op) => FilterChip(
                 label: Text(op),
+                labelPadding: const EdgeInsets.symmetric(horizontal: 4.0), // Reduce padding
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap, // Reduce tap target size
                 selected: _selectedOperators.contains(op),
                 onSelected: (selected) {
                   setState(() {
@@ -259,6 +262,8 @@ class _OfferComparatorScreenState extends State<OfferComparatorScreen> {
               // Sort Options
               ChoiceChip(
                 label: const Text('Trier par Nom'),
+                labelPadding: const EdgeInsets.symmetric(horizontal: 4.0), // Reduce padding
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap, // Reduce tap target size
                 selected: _sortOption == SortOption.name,
                 onSelected: (selected) {
                   if (selected) {
@@ -270,7 +275,9 @@ class _OfferComparatorScreenState extends State<OfferComparatorScreen> {
                 },
               ),
               ChoiceChip(
-                label: const Text('Trier par Prix'),
+                label: const Text("Trier par Prix"),
+                labelPadding: const EdgeInsets.symmetric(horizontal: 4.0), // Reduce padding
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap, // Reduce tap target size
                 selected: _sortOption == SortOption.price,
                 onSelected: (selected) {
                   if (selected) {

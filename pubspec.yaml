@@ -45,6 +45,7 @@ flutter:
     - assets/data/tarifs.json # Added for call cost calculation
     - assets/data/promotions.json # Added for offer comparator
     - assets/logos/generated_app_logo.png
+    - assets/logos/djezzy_logo_simple.png # Explicitly add new logo
 
   # fonts:
   #   - family: Schyler
