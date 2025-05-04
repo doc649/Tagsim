@@ -56,6 +56,13 @@ class _ContactsScreenState extends State<ContactsScreen> {
     PermissionStatus status = await Permission.contacts.request();
 
     if (status.isGranted) {
+      // Clear lists before fetching to prevent duplicates on refresh
+      if (mounted) {
+        setState(() {
+          _allContactsWithDetails.clear();
+          _filteredContactsWithDetails.clear();
+        });
+      }
       try {
         List<Contact> contacts = await FlutterContacts.getContacts(
             withProperties: true, withPhoto: false);
