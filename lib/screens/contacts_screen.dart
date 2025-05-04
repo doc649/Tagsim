@@ -46,7 +46,8 @@ class _ContactsScreenState extends State<ContactsScreen> {
       _permissionDenied = false;
     });
     // Ensure recommender has tariffs loaded before fetching contacts
-    await _recommender.loadTariffs(); // Added this line
+    // Corrected method name: loadTariffsIfNeeded
+    await _recommender.loadTariffsIfNeeded();
     await _fetchContacts();
     if (mounted) { // Check again if mounted after async operation
       setState(() {
@@ -59,14 +60,14 @@ class _ContactsScreenState extends State<ContactsScreen> {
   Future<String?> _normalizePhoneNumber(String rawNumber) async {
     if (rawNumber.isEmpty) return null;
     try {
-      // Assume 'DZ' as default region if parsing fails without it
-      PhoneNumber? parsed = await phone_util.PhoneNumberUtil.parse(rawNumber, 'DZ');
-      if (parsed != null && parsed.e164 != null) {
-        print("Normalized '$rawNumber' to '${parsed.e164}'");
-        return parsed.e164; // Return E.164 format (e.g., +213...)
+      // Use normalizePhoneNumber to get E.164 format
+      String? normalized = await phone_util.PhoneNumberUtil.normalizePhoneNumber(rawNumber, 'DZ');
+      if (normalized != null) {
+        print("Normalized '$rawNumber' to '$normalized'");
+        return normalized; // Return E.164 format (e.g., +213...)
       }
     } catch (e) {
-      print("Could not normalize number '$rawNumber': $e. Using raw number.");
+      print("Could not normalize number '$rawNumber' using libphonenumber: $e. Using basic cleanup.");
       // Fallback: Basic cleanup if parsing fails
       String cleaned = rawNumber.replaceAll(RegExp(r'\s+|-|\(|\)'), '');
       if (cleaned.startsWith('0') && cleaned.length == 10) {
@@ -75,10 +76,12 @@ class _ContactsScreenState extends State<ContactsScreen> {
          print("Fallback normalized '$rawNumber' to '$cleaned'");
          return cleaned;
       }
-      return rawNumber; // Return raw (or slightly cleaned) if E.164 fails
+      // If basic cleanup doesn't result in a likely Algerian number, return null to avoid using invalid numbers
+      print("Fallback normalization failed for '$rawNumber'. Skipping number.");
+      return null;
     }
-    print("Normalization resulted in null for '$rawNumber'. Using raw number.");
-    return rawNumber; // Return raw if parsing gives null
+    print("Normalization resulted in null for '$rawNumber'. Skipping number.");
+    return null; // Return null if normalization fails
   }
   // ----------------------------------------------
 
