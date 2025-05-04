@@ -174,7 +174,7 @@ class _OfferComparatorScreenState extends State<OfferComparatorScreen> {
       case 'mobilis':
         return 'assets/logos/mobilis_logo.png'; // Updated path
       case 'djezzy':
-        return 'assets/logos/djezzy_logo.png'; // Updated path
+        return 'assets/logos/djezzy_logo_simple.png'; // Use simplified logo
       case 'ooredoo':
         return 'assets/logos/ooredoo_logo.png'; // Updated path
       default:
@@ -222,6 +222,7 @@ class _OfferComparatorScreenState extends State<OfferComparatorScreen> {
           padding: const EdgeInsets.all(8.0),
           child: TextField(
             controller: _searchController,
+            style: const TextStyle(color: Colors.black87), // Force darker text color
             decoration: InputDecoration(
               hintText: 'Rechercher par nom, opérateur...', // French hint text
               prefixIcon: const Icon(Icons.search),

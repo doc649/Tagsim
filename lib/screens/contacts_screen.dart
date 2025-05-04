@@ -316,7 +316,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
     // ... (keep existing logo logic)
     switch (operator) {
       case AlgerianMobileOperator.Djezzy:
-        return 'assets/images/djezzy_logo.png';
+        return 'assets/logos/djezzy_logo_simple.png';
       case AlgerianMobileOperator.Mobilis:
         return 'assets/images/mobilis_logo.png';
       case AlgerianMobileOperator.Ooredoo:
