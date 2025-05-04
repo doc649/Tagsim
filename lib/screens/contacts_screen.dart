@@ -96,9 +96,18 @@ class _ContactsScreenState extends State<ContactsScreen> {
     return null;
   }
 
-  // --- Reverted Display Formatting - Keep +213 for now ---
-  // String _formatPhoneNumberForDisplay(String? normalizedNumber) { ... }
-  // ------------------------------------------------------
+  // Helper function to format number for display
+  String _formatPhoneNumberForDisplay(String? normalizedNumber) {
+    if (normalizedNumber == null) {
+      return '(Numéro invalide)';
+    }
+    if (normalizedNumber.startsWith('+213') && normalizedNumber.length == 13) {
+      // Algerian number, format to local 0...
+      return '0${normalizedNumber.substring(4)}';
+    }
+    // For other numbers, return the normalized format
+    return normalizedNumber;
+  }
 
   Future<void> _fetchContacts() async {
     print("FETCH_CONTACTS: Starting _fetchContacts");
@@ -263,9 +272,10 @@ class _ContactsScreenState extends State<ContactsScreen> {
     print("ContactsScreen: Filtering contacts with query: '$query'");
     setState(() {
       _filteredContactsWithDetails = _allContactsWithDetails.where((details) {
-        // Search in display name OR NORMALIZED phone number (reverted from formatted)
+        // Search in display name OR FORMATTED phone number for consistency with display
         final nameMatch = details.contact.displayName.toLowerCase().contains(query);
-        final numberMatch = details.phoneNumber?.toLowerCase().contains(query) ?? false;
+        final formattedNumberForSearch = _formatPhoneNumberForDisplay(details.phoneNumber).toLowerCase();
+        final numberMatch = formattedNumberForSearch.contains(query);
         return nameMatch || numberMatch;
       }).toList();
     });
@@ -451,12 +461,10 @@ class _ContactsScreenState extends State<ContactsScreen> {
         final contact = details.contact;
         final logoPath = _getOperatorLogoPath(details.operatorInfo);
         final phoneNumber = details.phoneNumber; // Normalized number stored internally
+        final String formattedNumberForDisplay = _formatPhoneNumberForDisplay(phoneNumber); // Format for display
 
-        // Reverted: Use normalized number directly for display for now
-        final String numberToDisplay = phoneNumber ?? '(Numéro invalide)';
-
-        // Determine display name: Use contact name if available, otherwise use the NORMALIZED phone number
-        final String displayName = contact.displayName.isNotEmpty ? contact.displayName : numberToDisplay;
+        // Determine display name: Use contact name if available, otherwise use the FORMATTED phone number
+        final String displayName = contact.displayName.isNotEmpty ? contact.displayName : formattedNumberForDisplay;
         final String leadingText = contact.displayName.isNotEmpty ? contact.displayName[0].toUpperCase() : '#'; // Use '#' for contacts without name
 
         return ListTile(
@@ -472,10 +480,10 @@ class _ContactsScreenState extends State<ContactsScreen> {
                   padding: const EdgeInsets.only(right: 4.0),
                   child: Text(details.countryFlagEmoji!, style: const TextStyle(fontSize: 16)),
                 ),
-              // Display NORMALIZED number in subtitle only if name is present
+              // Display FORMATTED number in subtitle only if name is present
               if (contact.displayName.isNotEmpty)
-                 Expanded(child: Text(numberToDisplay)), // Use normalized number
-              // If no name, the number is already in the title, so don't repeat in subtitle
+                 Expanded(child: Text(formattedNumberForDisplay)),
+              // If no name, the number is already in the title (formatted), so don't repeat in subtitle
               if (contact.displayName.isEmpty)
                  const Expanded(child: SizedBox.shrink()), // Show nothing if name is empty
 
@@ -491,7 +499,8 @@ class _ContactsScreenState extends State<ContactsScreen> {
                 ),
             ],
           ),
-          trailing: phoneNumber != null // Use normalized number for actions
+          // Actions should still use the normalized number (+213...) for tel: and sms: URIs
+          trailing: phoneNumber != null
               ? Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -500,7 +509,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
                       tooltip: 'Appeler',
                       onPressed: () {
                         if (phoneNumber != null) {
-                          final Uri callUri = Uri(scheme: 'tel', path: phoneNumber);
+                          final Uri callUri = Uri(scheme: 'tel', path: phoneNumber); // Use normalized number
                           _launchUniversalLink(callUri);
                         }
                       },
@@ -510,7 +519,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
                       tooltip: 'Envoyer SMS',
                       onPressed: () {
                         if (phoneNumber != null) {
-                          final Uri smsUri = Uri(scheme: 'sms', path: phoneNumber);
+                          final Uri smsUri = Uri(scheme: 'sms', path: phoneNumber); // Use normalized number
                           _launchUniversalLink(smsUri);
                         }
                       },
