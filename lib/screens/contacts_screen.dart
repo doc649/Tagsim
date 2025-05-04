@@ -23,7 +23,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
   bool _permissionDenied = false;
   bool _isLoading = true;
   final TextEditingController _searchController = TextEditingController();
-  final SmartCallRecommender _recommender = SmartCallRecommender(); // Instantiate the recommender
+  // final SmartCallRecommender _recommender = SmartCallRecommender(); // Instantiate the recommender - Temporarily disabled
 
   @override
   void initState() {
@@ -53,14 +53,14 @@ class _ContactsScreenState extends State<ContactsScreen> {
       _permissionDenied = false;
     });
     try {
-      print("ContactsScreen: Loading tariffs...");
-      await _recommender.loadTariffsIfNeeded();
-      print("ContactsScreen: Tariffs loaded (or skipped if already loaded)");
+      // print("ContactsScreen: Loading tariffs...");
+      // await _recommender.loadTariffsIfNeeded(); // Temporarily disabled
+      // print("ContactsScreen: Tariffs loaded (or skipped if already loaded)");
       print("ContactsScreen: Fetching contacts...");
       await _fetchContacts();
       print("ContactsScreen: Contacts fetched");
     } catch (e, stacktrace) {
-      print("ContactsScreen: Error during _initializeScreen (tariff or contact fetch): $e\n$stacktrace");
+      print("ContactsScreen: Error during _initializeScreen (contact fetch): $e\n$stacktrace");
     }
     if (mounted) {
       setState(() {
@@ -136,8 +136,6 @@ class _ContactsScreenState extends State<ContactsScreen> {
               String rawPhoneNumber = phone.number;
               String contactName = contact.displayName.isNotEmpty ? contact.displayName : "(No Name)";
 
-              // print("DEBUG_CONTACT: Processing RawPhone='$rawPhoneNumber', ContactName='$contactName', ContactID='${contact.id}'"); // Already exists
-
               print("FETCH_CONTACTS:     Normalizing '$rawPhoneNumber'...");
               String? normalizedNumber = await _normalizePhoneNumber(rawPhoneNumber);
 
@@ -186,11 +184,15 @@ class _ContactsScreenState extends State<ContactsScreen> {
                 }
               }
 
-              print("FETCH_CONTACTS:       Getting recommendation for '$normalizedNumber'...");
-              Map<SimChoice, String?> recommendationResult = await _recommender.getBestSim(normalizedNumber);
-              SimChoice recommendation = recommendationResult.keys.first;
-              String? errorMsg = recommendationResult.values.first;
-              print("FETCH_CONTACTS:       Recommendation: $recommendation, Error: $errorMsg");
+              // --- Temporarily Disable Recommendation --- //
+              // print("FETCH_CONTACTS:       Getting recommendation for '$normalizedNumber'...");
+              // Map<SimChoice, String?> recommendationResult = await _recommender.getBestSim(normalizedNumber);
+              // SimChoice recommendation = recommendationResult.keys.first;
+              // String? errorMsg = recommendationResult.values.first;
+              // print("FETCH_CONTACTS:       Recommendation: $recommendation, Error: $errorMsg");
+              SimChoice recommendation = SimChoice.none; // Default to none
+              String? errorMsg = null;
+              // ------------------------------------------ //
 
               print("FETCH_CONTACTS:       Adding to uniqueContactsByNumberMap: Key='$normalizedNumber'");
               uniqueContactsByNumberMap[normalizedNumber] = ContactWithDetails(
@@ -199,8 +201,8 @@ class _ContactsScreenState extends State<ContactsScreen> {
                 countryCode: countryCode,
                 countryFlagEmoji: flagEmoji,
                 operatorInfo: operator,
-                recommendedSim: recommendation,
-                recommendationError: errorMsg,
+                recommendedSim: recommendation, // Use default value
+                recommendationError: errorMsg, // Use default value
               );
               print("FETCH_CONTACTS:       Added successfully.");
 
@@ -313,7 +315,11 @@ class _ContactsScreenState extends State<ContactsScreen> {
   }
 
   Widget _buildRecommendationIndicator(ContactWithDetails details) {
-    // ... (keep existing recommendation indicator logic)
+    // --- Temporarily Disable Recommendation Display --- //
+    return const SizedBox.shrink(); // Return empty widget
+    // ------------------------------------------------ //
+
+    /* // Original logic kept for reference
     SimChoice recommendation = details.recommendedSim ?? SimChoice.none;
     String? errorMsg = details.recommendationError;
     IconData iconData;
@@ -350,6 +356,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
         child: Icon(iconData, color: iconColor, size: 20),
       ),
     );
+    */
   }
 
   @override
@@ -380,7 +387,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _initializeScreen,
-        tooltip: 'Rafraîchir les contacts et recommandations',
+        tooltip: 'Rafraîchir les contacts',
         child: const Icon(Icons.refresh_outlined),
       ),
     );
@@ -472,7 +479,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
               if (contact.displayName.isEmpty)
                  const Expanded(child: SizedBox.shrink()), // Show nothing if name is empty
 
-              _buildRecommendationIndicator(details),
+              _buildRecommendationIndicator(details), // This will now return SizedBox.shrink()
               if (logoPath != null)
                 Padding(
                   padding: const EdgeInsets.only(left: 8.0),
