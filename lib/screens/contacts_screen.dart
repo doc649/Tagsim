@@ -105,17 +105,22 @@ class _ContactsScreenState extends State<ContactsScreen> {
               }
             }
 
-            // Get recommendation using the SmartCallRecommender
-            recommendation = await _recommender.getBestSim(phoneNumber);
+                print("Processing contact: ID=${contact.id}, Name=${contact.displayName}, Phone=$phoneNumber"); // Log processing
 
-            uniqueContacts[contact.id] = ContactWithDetails(
-              contact: contact,
-              phoneNumber: phoneNumber, // Store only the first number
-              countryCode: countryCode,
-              countryFlagEmoji: flagEmoji, // Will be null for DZ numbers
-              operatorInfo: operator,
-              recommendedSim: recommendation, // Store the recommendation
-            );
+                recommendation = await _recommender.getBestSim(phoneNumber);
+
+                uniqueContacts[contact.id] = ContactWithDetails(
+                  contact: contact,
+                  phoneNumber: phoneNumber, // Store only the first number
+                  countryCode: countryCode,
+                  countryFlagEmoji: flagEmoji,
+                  operatorInfo: operator,
+                  recommendedSim: recommendation,
+                );
+                 print("Added contact to map: ID=${contact.id}"); // Log addition
+              } else {
+                 print("Skipping duplicate contact ID: ${contact.id}, Name=${contact.displayName}"); // Log skip
+              }
           }
         }
         processedContacts = uniqueContacts.values.toList(); // Convert map values back to list
