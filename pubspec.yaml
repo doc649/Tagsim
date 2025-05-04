@@ -41,6 +41,7 @@ flutter:
     - assets/logos/
     - assets/images/
     - assets/ussd_data.json
+    - assets/ussd_icon_mapping.json
     - assets/data/tarifs.json # Added for call cost calculation
     - assets/data/promotions.json # Added for offer comparator
     - assets/logos/generated_app_logo.png
