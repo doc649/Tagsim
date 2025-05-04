@@ -46,7 +46,6 @@ class _ContactsScreenState extends State<ContactsScreen> {
       _permissionDenied = false;
     });
     // Ensure recommender has tariffs loaded before fetching contacts
-    // Corrected method name: loadTariffsIfNeeded
     await _recommender.loadTariffsIfNeeded();
     await _fetchContacts();
     if (mounted) { // Check again if mounted after async operation
@@ -60,28 +59,24 @@ class _ContactsScreenState extends State<ContactsScreen> {
   Future<String?> _normalizePhoneNumber(String rawNumber) async {
     if (rawNumber.isEmpty) return null;
     try {
-      // Use normalizePhoneNumber to get E.164 format
       String? normalized = await phone_util.PhoneNumberUtil.normalizePhoneNumber(rawNumber, 'DZ');
       if (normalized != null) {
-        print("Normalized '$rawNumber' to '$normalized'");
-        return normalized; // Return E.164 format (e.g., +213...)
+        // print("Normalized '$rawNumber' to '$normalized'"); // Keep log minimal for now
+        return normalized;
       }
     } catch (e) {
       print("Could not normalize number '$rawNumber' using libphonenumber: $e. Using basic cleanup.");
-      // Fallback: Basic cleanup if parsing fails
       String cleaned = rawNumber.replaceAll(RegExp(r'\s+|-|\(|\)'), '');
       if (cleaned.startsWith('0') && cleaned.length == 10) {
-         // Simple Algerian mobile format to E.164 guess
          cleaned = '+213${cleaned.substring(1)}';
          print("Fallback normalized '$rawNumber' to '$cleaned'");
          return cleaned;
       }
-      // If basic cleanup doesn't result in a likely Algerian number, return null to avoid using invalid numbers
       print("Fallback normalization failed for '$rawNumber'. Skipping number.");
       return null;
     }
     print("Normalization resulted in null for '$rawNumber'. Skipping number.");
-    return null; // Return null if normalization fails
+    return null;
   }
   // ----------------------------------------------
 
@@ -89,7 +84,6 @@ class _ContactsScreenState extends State<ContactsScreen> {
     PermissionStatus status = await Permission.contacts.request();
 
     if (status.isGranted) {
-      // Clear lists before fetching to prevent duplicates on refresh
       if (mounted) {
         setState(() {
           _allContactsWithDetails.clear();
@@ -100,76 +94,78 @@ class _ContactsScreenState extends State<ContactsScreen> {
         List<Contact> contacts = await FlutterContacts.getContacts(
             withProperties: true, withPhoto: false);
 
-        // Use local variables within the try block scope
         List<ContactWithDetails> processedContacts = [];
-        // Use Map<NormalizedPhoneNumber, ContactWithDetails> to handle duplicates by NUMBER
-        Map<String, ContactWithDetails> uniqueContactsByNumber = {};
+        // Use Map for storing final details, and Set for explicit duplicate check as requested
+        Map<String, ContactWithDetails> uniqueContactsByNumberMap = {};
+        Set<String> processedNormalizedNumbersSet = {}; // Explicit Set for duplicate check
 
         for (var contact in contacts) {
-          // Iterate through ALL phone numbers for the contact
           for (var phone in contact.phones) {
             if (phone.number.isNotEmpty) {
               String rawPhoneNumber = phone.number;
               String? normalizedNumber = await _normalizePhoneNumber(rawPhoneNumber);
 
-              // Only process if normalization succeeded and number is not already processed
-              if (normalizedNumber != null && !uniqueContactsByNumber.containsKey(normalizedNumber)) {
-                String? countryCode;
-                String? flagEmoji;
-                AlgerianMobileOperator operator = AlgerianMobileOperator.Unknown;
+              if (normalizedNumber == null) {
+                 print("DEBUG: Skipping number due to normalization failure: Raw='$rawPhoneNumber', Contact='${contact.displayName}'");
+                 continue; // Skip this phone number
+              }
 
-                try {
-                  // Use normalized number for region info and operator detection
-                  RegionInfo? regionInfo = await phone_util.PhoneNumberUtil.getRegionInfo(normalizedNumber, 'DZ');
-                  if (regionInfo != null && regionInfo.isoCode != null) {
-                    countryCode = regionInfo.isoCode;
-                    if (countryCode != 'DZ') {
-                      flagEmoji = emoji_converter.EmojiConverter.fromAlpha2CountryCode(countryCode!);
-                    }
-                    if (countryCode == 'DZ') {
-                      operator = OperatorDetector.detectOperator(normalizedNumber);
-                    }
+              // --- Explicit Duplicate Check using Set (as requested) ---
+              if (processedNormalizedNumbersSet.contains(normalizedNumber)) {
+                print("DEBUG: Skipping duplicate normalized number (Set check): '$normalizedNumber', Raw='$rawPhoneNumber', Contact='${contact.displayName}'");
+                continue; // Skip this phone number as it's a duplicate
+              }
+              // --------------------------------------------------------
+
+              // Add to Set and Map if it's a new number
+              processedNormalizedNumbersSet.add(normalizedNumber);
+              print("Processing unique number: '$normalizedNumber', Raw='$rawPhoneNumber', Contact='${contact.displayName}'");
+
+              String? countryCode;
+              String? flagEmoji;
+              AlgerianMobileOperator operator = AlgerianMobileOperator.Unknown;
+
+              try {
+                RegionInfo? regionInfo = await phone_util.PhoneNumberUtil.getRegionInfo(normalizedNumber, 'DZ');
+                if (regionInfo != null && regionInfo.isoCode != null) {
+                  countryCode = regionInfo.isoCode;
+                  if (countryCode != 'DZ') {
+                    flagEmoji = emoji_converter.EmojiConverter.fromAlpha2CountryCode(countryCode!);
                   }
-                } catch (e) {
-                  print('Error getting region info for normalized number $normalizedNumber: $e');
-                  // Fallback for Algerian numbers if region info fails (using normalized)
-                  if (normalizedNumber.startsWith('+213')) {
-                     operator = OperatorDetector.detectOperator(normalizedNumber);
-                     if (operator != AlgerianMobileOperator.Unknown) {
-                       countryCode = 'DZ';
-                     }
+                  if (countryCode == 'DZ') {
+                    operator = OperatorDetector.detectOperator(normalizedNumber);
                   }
                 }
-
-                print("Processing contact: ID=${contact.id}, Name=${contact.displayName}, RawPhone=$rawPhoneNumber, NormPhone=$normalizedNumber");
-
-                // Get recommendation using the NORMALIZED number
-                Map<SimChoice, String?> recommendationResult = await _recommender.getBestSim(normalizedNumber);
-                SimChoice recommendation = recommendationResult.keys.first;
-                String? errorMsg = recommendationResult.values.first;
-
-                uniqueContactsByNumber[normalizedNumber] = ContactWithDetails(
-                  contact: contact,
-                  phoneNumber: normalizedNumber, // Store the NORMALIZED number
-                  countryCode: countryCode,
-                  countryFlagEmoji: flagEmoji,
-                  operatorInfo: operator,
-                  recommendedSim: recommendation,
-                  recommendationError: errorMsg,
-                );
-                print("Added contact to map with key (normalized number): $normalizedNumber");
-              } else {
-                 if (normalizedNumber == null) {
-                   print("Skipping contact number due to normalization failure: ID=${contact.id}, Name=${contact.displayName}, RawPhone=$rawPhoneNumber");
-                 } else {
-                   print("Skipping duplicate normalized number: $normalizedNumber for contact ID=${contact.id}, Name=${contact.displayName}");
-                 }
+              } catch (e) {
+                print('Error getting region info for normalized number $normalizedNumber: $e');
+                if (normalizedNumber.startsWith('+213')) {
+                   operator = OperatorDetector.detectOperator(normalizedNumber);
+                   if (operator != AlgerianMobileOperator.Unknown) {
+                     countryCode = 'DZ';
+                   }
+                }
               }
+
+              Map<SimChoice, String?> recommendationResult = await _recommender.getBestSim(normalizedNumber);
+              SimChoice recommendation = recommendationResult.keys.first;
+              String? errorMsg = recommendationResult.values.first;
+
+              // Store in the Map using the normalized number as key
+              uniqueContactsByNumberMap[normalizedNumber] = ContactWithDetails(
+                contact: contact,
+                phoneNumber: normalizedNumber,
+                countryCode: countryCode,
+                countryFlagEmoji: flagEmoji,
+                operatorInfo: operator,
+                recommendedSim: recommendation,
+                recommendationError: errorMsg,
+              );
+
             } // End if phone.number.isNotEmpty
           } // End of phone numbers loop
         } // End of contacts loop
 
-        processedContacts = uniqueContactsByNumber.values.toList(); // Convert map values back to list
+        processedContacts = uniqueContactsByNumberMap.values.toList();
         processedContacts.sort((a, b) => a.contact.displayName.toLowerCase().compareTo(b.contact.displayName.toLowerCase()));
 
         if (mounted) {
@@ -182,7 +178,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
         print('Error fetching or processing contacts: $e');
          if (mounted) {
             setState(() {
-              // Handle error state if needed, e.g., show a message
+              // Handle error state if needed
             });
          }
       }
@@ -201,7 +197,6 @@ class _ContactsScreenState extends State<ContactsScreen> {
     setState(() {
       _filteredContactsWithDetails = _allContactsWithDetails.where((details) {
         final nameMatch = details.contact.displayName.toLowerCase().contains(query);
-        // Filter using the normalized phone number
         final numberMatch = details.phoneNumber?.toLowerCase().contains(query) ?? false;
         return nameMatch || numberMatch;
       }).toList();
@@ -223,27 +218,21 @@ class _ContactsScreenState extends State<ContactsScreen> {
   }
 
    Future<void> _launchUniversalLink(Uri url) async {
-    print("Attempting to launch URL: $url"); // Log start
+    print("Attempting to launch URL: $url");
     try {
-      print("Trying to launch in external non-browser app..."); // Log native attempt
       final bool nativeAppLaunchSucceeded = await launchUrl(
         url,
         mode: LaunchMode.externalNonBrowserApplication,
       );
       if (!nativeAppLaunchSucceeded) {
-        print("Native app launch failed, trying external application..."); // Log fallback attempt
         await launchUrl(
           url,
           mode: LaunchMode.externalApplication,
         );
-        print("Launched in external application."); // Log success fallback
-      } else {
-        print("Launched successfully in native app."); // Log success native
       }
-    } catch (e, stacktrace) { // Added stacktrace
-      print("Could not launch $url: $e\n$stacktrace"); // Log error with stacktrace
+    } catch (e, stacktrace) {
+      print("Could not launch $url: $e\n$stacktrace");
       if (mounted) {
-        // Use ScaffoldMessenger safely
         final scaffoldMessenger = ScaffoldMessenger.maybeOf(context);
         if (scaffoldMessenger != null) {
           scaffoldMessenger.showSnackBar(
@@ -280,7 +269,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
       case SimChoice.error:
         iconData = Icons.error_outline;
         iconColor = Colors.orange;
-        tooltip = errorMsg ?? 'Erreur lors du calcul de la recommandation'; // Use specific error message
+        tooltip = errorMsg ?? 'Erreur lors du calcul de la recommandation';
         break;
     }
 
@@ -376,7 +365,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
         final details = _filteredContactsWithDetails[index];
         final contact = details.contact;
         final logoPath = _getOperatorLogoPath(details.operatorInfo);
-        final phoneNumber = details.phoneNumber; // This is now the normalized number
+        final phoneNumber = details.phoneNumber; // Normalized number
 
         return ListTile(
           leading: CircleAvatar(
@@ -391,7 +380,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
                   padding: const EdgeInsets.only(right: 4.0),
                   child: Text(details.countryFlagEmoji!, style: const TextStyle(fontSize: 16)),
                 ),
-              Expanded(child: Text(phoneNumber ?? 'Numéro invalide')), // Display normalized number
+              Expanded(child: Text(phoneNumber ?? 'Numéro invalide')),
               _buildRecommendationIndicator(details),
               if (logoPath != null)
                 Padding(
