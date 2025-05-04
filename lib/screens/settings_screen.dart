@@ -103,13 +103,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: const Text('Configuration SIM'),
             subtitle: const Text('Définir l\'opérateur de chaque SIM'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              // TODO: Implement SIM configuration screen
-              // Temporarily removed SnackBar until feature is ready
-              // ScaffoldMessenger.of(context).showSnackBar(
-              //   const SnackBar(content: Text("Fonctionnalité non implémentée.")),
-              // );
-            },
+            onTap: () { /* Feature not implemented yet */ },
           ),
           ListTile(
             leading: const Icon(Icons.info_outline),
