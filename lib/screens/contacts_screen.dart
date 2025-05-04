@@ -86,7 +86,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
             String? countryCode;
             String? flagEmoji;
             AlgerianMobileOperator operator = AlgerianMobileOperator.Unknown;
-            SimChoice recommendation = SimChoice.none; // Default recommendation
+            // SimChoice recommendation = SimChoice.none; // Default recommendation <-- REMOVED
 
             try {
               RegionInfo? regionInfo = await phone_util.PhoneNumberUtil.getRegionInfo(phoneNumber, 'DZ');
@@ -143,15 +143,15 @@ class _ContactsScreenState extends State<ContactsScreen> {
             _filteredContactsWithDetails = processedContacts;
           });
         }
-
-      } catch (e) {
+      // Moved the closing brace for 'try' here
+      } catch (e) { // Reverted to simple catch (e)
         print('Error fetching contacts: $e');
          if (mounted) {
             setState(() {
               // Handle error state if needed
             });
          }
-      }
+      } // Closing brace for 'catch'
     } else {
        if (mounted) {
           setState(() {
