@@ -1,3 +1,4 @@
+// Contenu corrigé du fichier contacts_screen.dart
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
@@ -180,59 +181,59 @@ class _ContactsScreenState extends State<ContactsScreen> {
 
               // On continue seulement si c'est un nouveau numéro ou si une mise à jour est nécessaire
               if (shouldProcessThisContact) {
-                  String? countryCode;
-                  String? flagEmoji;
-                  AlgerianMobileOperator operator = AlgerianMobileOperator.Unknown;
+                String? countryCode;
+                String? flagEmoji;
+                AlgerianMobileOperator operator = AlgerianMobileOperator.Unknown;
 
-              try {
-                print("FETCH_CONTACTS:       Getting region info for '$normalizedNumber'...");
-                RegionInfo? regionInfo = await phone_util.PhoneNumberUtil.getRegionInfo(normalizedNumber, 'DZ');
-                if (regionInfo != null && regionInfo.isoCode != null) {
-                  countryCode = regionInfo.isoCode;
-                  print("FETCH_CONTACTS:       Region info: Code=$countryCode");
-                  if (countryCode != 'DZ') {
-                    flagEmoji = emoji_converter.EmojiConverter.fromAlpha2CountryCode(countryCode!);
+                try {
+                  print("FETCH_CONTACTS:       Getting region info for '$normalizedNumber'...");
+                  RegionInfo? regionInfo = await phone_util.PhoneNumberUtil.getRegionInfo(normalizedNumber, 'DZ');
+                  if (regionInfo != null && regionInfo.isoCode != null) {
+                    countryCode = regionInfo.isoCode;
+                    print("FETCH_CONTACTS:       Region info: Code=$countryCode");
+                    if (countryCode != 'DZ') {
+                      flagEmoji = emoji_converter.EmojiConverter.fromAlpha2CountryCode(countryCode!);
+                    }
+                    if (countryCode == 'DZ') {
+                      operator = OperatorDetector.detectOperator(normalizedNumber);
+                      print("FETCH_CONTACTS:       Detected operator (DZ): $operator");
+                    }
+                  } else {
+                    print("FETCH_CONTACTS:       Region info was null or had no isoCode");
                   }
-                  if (countryCode == 'DZ') {
-                    operator = OperatorDetector.detectOperator(normalizedNumber);
-                    print("FETCH_CONTACTS:       Detected operator (DZ): $operator");
+                } catch (e, stacktrace) {
+                  print('FETCH_CONTACTS:       Error getting region info for normalized number $normalizedNumber: $e');
+                  if (normalizedNumber.startsWith('+213')) {
+                     operator = OperatorDetector.detectOperator(normalizedNumber);
+                     print("FETCH_CONTACTS:       Detected operator (DZ fallback): $operator");
+                     if (operator != AlgerianMobileOperator.Unknown) {
+                       countryCode = 'DZ';
+                     }
                   }
-                } else {
-                  print("FETCH_CONTACTS:       Region info was null or had no isoCode");
                 }
-              } catch (e, stacktrace) {
-                print('FETCH_CONTACTS:       Error getting region info for normalized number $normalizedNumber: $e');
-                if (normalizedNumber.startsWith('+213')) {
-                   operator = OperatorDetector.detectOperator(normalizedNumber);
-                   print("FETCH_CONTACTS:       Detected operator (DZ fallback): $operator");
-                   if (operator != AlgerianMobileOperator.Unknown) {
-                     countryCode = 'DZ';
-                   }
-                }
+
+                // --- Temporarily Disable Recommendation --- //
+                // print("FETCH_CONTACTS:       Getting recommendation for '$normalizedNumber'...");
+                // Map<SimChoice, String?> recommendationResult = await _recommender.getBestSim(normalizedNumber);
+                // SimChoice recommendation = recommendationResult.keys.first;
+                // String? errorMsg = recommendationResult.values.first;
+                // print("FETCH_CONTACTS:       Recommendation: $recommendation, Error: $errorMsg");
+                SimChoice recommendation = SimChoice.none; // Default to none
+                String? errorMsg = null;
+                // ------------------------------------------ //
+
+                print("FETCH_CONTACTS:       Adding to uniqueContactsByNumberMap: Key='$normalizedNumber'");
+                uniqueContactsByNumberMap[normalizedNumber] = ContactWithDetails(
+                  contact: contact,
+                  phoneNumber: normalizedNumber, // Store normalized number internally
+                  countryCode: countryCode,
+                  countryFlagEmoji: flagEmoji,
+                  operatorInfo: operator,
+                  recommendedSim: recommendation, // Use default value
+                  recommendationError: errorMsg, // Use default value
+                );
+                print("FETCH_CONTACTS:       Added successfully.");
               }
-
-              // --- Temporarily Disable Recommendation --- //
-              // print("FETCH_CONTACTS:       Getting recommendation for '$normalizedNumber'...");
-              // Map<SimChoice, String?> recommendationResult = await _recommender.getBestSim(normalizedNumber);
-              // SimChoice recommendation = recommendationResult.keys.first;
-              // String? errorMsg = recommendationResult.values.first;
-              // print("FETCH_CONTACTS:       Recommendation: $recommendation, Error: $errorMsg");
-              SimChoice recommendation = SimChoice.none; // Default to none
-              String? errorMsg = null;
-              // ------------------------------------------ //
-
-              print("FETCH_CONTACTS:       Adding to uniqueContactsByNumberMap: Key='$normalizedNumber'");
-              uniqueContactsByNumberMap[normalizedNumber] = ContactWithDetails(
-                contact: contact,
-                phoneNumber: normalizedNumber, // Store normalized number internally
-                countryCode: countryCode,
-                countryFlagEmoji: flagEmoji,
-                operatorInfo: operator,
-                recommendedSim: recommendation, // Use default value
-                recommendationError: errorMsg, // Use default value
-              );
-              print("FETCH_CONTACTS:       Added successfully.");
-
             } else {
               print("FETCH_CONTACTS:   Skipping empty phone number.");
             }
@@ -326,7 +327,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
     }
   }
 
-   Future<void> _launchUniversalLink(Uri url) async {
+  Future<void> _launchUniversalLink(Uri url) async {
     // ... (keep existing launch logic)
     print("Attempting to launch URL: $url");
     try {
