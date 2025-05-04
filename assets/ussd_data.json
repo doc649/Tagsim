@@ -5,27 +5,26 @@
       {
         "name": "Solde & Recharge",
         "codes": [
-          {"description": "Consulter crédit & quota internet", "code": "*222#"},
-          {"description": "Recharger (carte)", "code": "*111*{CODE}#"}
+          {"description": "Vérifier le solde", "code": "*222#"},
+          {"description": "Recharger avec une carte", "code": "*111*{CODE_RECHARGE}#"}
         ]
       },
       {
         "name": "Services",
         "codes": [
-          {"description": "Mon numéro", "code": "*101#"},
-          {"description": "Notification appels manqués (éteint/hors ligne)", "code": "*21*644#"},
-          {"description": "Annuler renvoi d'appel", "code": "*21#"},
-          {"description": "Kelemni (Rappelle-moi)", "code": "*606*{NUMERO}#"},
-          {"description": "Sellekni (Transfert crédit)", "code": "*610*{NUMERO}*{MONTANT}*{CODE_SECRET}#"},
-          {"description": "Masquer numéro (appel unique)", "code": "#31#{NUMERO}"},
-          {"description": "Activer appel en attente", "code": "*43#"},
-          {"description": "Désactiver appel en attente", "code": "#43#"}
+          {"description": "Connaître son numéro", "code": "*101#"},
+          {"description": "Transférer du crédit (Sellekni)", "code": "*610*{NUMERO}*{MONTANT}*{CODE_PIN}#"},
+          {"description": "Envoyer un 'Appelez-moi' (Kelemni)", "code": "*606*{NUMERO}#"},
+          {"description": "Activer notification appels manqués (644)", "code": "**62*644#"},
+          {"description": "Désactiver service 644", "code": "##62#"},
+          {"description": "Masquer son numéro (appel unique)", "code": "#31#{NUMERO}"},
+          {"description": "Annuler tous les renvois d'appels", "code": "##002#"}
         ]
       },
       {
         "name": "Offres",
         "codes": [
-          {"description": "Accès offres & forfaits (prépayé)", "code": "*600#"}
+          {"description": "Offres Internet et forfaits", "code": "*600#"}
         ]
       }
     ]
@@ -36,26 +35,25 @@
       {
         "name": "Solde & Recharge",
         "codes": [
-          {"description": "Consultation crédit (Payant: 5 Da)", "code": "710"}
+          {"description": "Vérifier le solde", "code": "*710#"},
+          {"description": "Recharger avec une carte", "code": "*111*{CODE_RECHARGE}#"},
+          {"description": "Transférer du crédit", "code": "*770*{NUMERO}*{MONTANT}#"}
         ]
       },
       {
         "name": "Services",
         "codes": [
-          {"description": "Service Client Particulier", "code": "777"},
-          {"description": "Menu Général Prépayé", "code": "700"},
-          {"description": "Service Client Distributeur", "code": "401"},
-          {"description": "Service Client IMTIYAZ", "code": "444"},
-          {"description": "Info Facture (Post-payé)", "code": "787"},
-          {"description": "Service Client Entreprise", "code": "788"},
-          {"description": "Qerius (Annuaire)", "code": "718"},
-          {"description": "Tranquilo / SMS Bip (Crédit urgence)", "code": "*100#"}
+          {"description": "Menu principal", "code": "*700#"},
+          {"description": "Envoyer un 'Appelez-moi'", "code": "*606*{NUMERO}#"},
+          {"description": "Consommation de données", "code": "*777#"},
+          {"description": "Activer notification appels manqués (644)", "code": "**62*644#"},
+          {"description": "Désactiver service 644", "code": "##62#"}
         ]
       },
       {
         "name": "Offres",
         "codes": [
-          {"description": "Choix offre/profil (Payant: 25 Da)", "code": "*720#"}
+          {"description": "Offres Internet et forfaits", "code": "*720#"}
         ]
       }
     ]
@@ -66,38 +64,28 @@
       {
         "name": "Solde & Recharge",
         "codes": [
-          {"description": "Consulter solde", "code": "*102#"},
-          {"description": "Recharger", "code": "111*{CODE}#"}
-        ]
-      },
-      {
-        "name": "Données & Offres",
-        "codes": [
-          {"description": "Consulter solde données", "code": "*113#"},
-          {"description": "Offres données", "code": "*117#"},
-          {"description": "Offres appels", "code": "*120#"}
+          {"description": "Vérifier le solde", "code": "*100#"},
+          {"description": "Recharger avec une carte", "code": "*101*{CODE_RECHARGE}#"},
+          {"description": "Transférer du crédit", "code": "*120*{NUMERO}*{MONTANT}#"}
         ]
       },
       {
         "name": "Services",
         "codes": [
-          {"description": "Menu principal", "code": "*100#"},
-          {"description": "Rappelle-moi", "code": "*151#"},
-          {"description": "Services Ooredoo", "code": "*153#"},
-          {"description": "Itinérance (Roaming)", "code": "*155#"}
+          {"description": "Menu principal", "code": "*151#"},
+          {"description": "Envoyer un 'Appelez-moi'", "code": "*113*{NUMERO}#"},
+          {"description": "Consommation de données", "code": "*102#"},
+          {"description": "Activer notification appels manqués (644)", "code": "**62*644#"},
+          {"description": "Désactiver service 644", "code": "##62#"}
         ]
       },
       {
-        "name": "Renvoi d'appel",
+        "name": "Offres",
         "codes": [
-          {"description": "Activer (Occupé)", "code": "*62*{NUMERO}#"},
-          {"description": "Activer (Pas de réponse)", "code": "*61*{NUMERO}#"},
-          {"description": "Activer (Inaccessible)", "code": "*67*{NUMERO}#"},
-          {"description": "Désactiver (Occupé)", "code": "##62#"},
-          {"description": "Désactiver (Pas de réponse)", "code": "##61#"},
-          {"description": "Désactiver (Inaccessible)", "code": "##67#"}
+          {"description": "Forfaits Internet", "code": "*124#"}
         ]
       }
     ]
   }
 ]
+

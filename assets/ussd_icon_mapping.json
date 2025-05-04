@@ -1,0 +1,17 @@
+{
+  "Vérifier le solde": "account_balance_wallet",
+  "Recharger avec une carte": "add_card",
+  "Transférer du crédit (Sellekni)": "send_to_mobile",
+  "Transférer du crédit": "send_to_mobile",
+  "Connaître son numéro": "perm_identity",
+  "Envoyer un 'Appelez-moi' (Kelemni)": "phone_callback",
+  "Envoyer un 'Appelez-moi'": "phone_callback",
+  "Activer notification appels manqués (644)": "notifications_active",
+  "Désactiver service 644": "notifications_off",
+  "Masquer son numéro (appel unique)": "visibility_off",
+  "Annuler tous les renvois d'appels": "cancel_schedule_send",
+  "Offres Internet et forfaits": "local_offer",
+  "Forfaits Internet": "local_offer",
+  "Menu principal": "dialpad",
+  "Consommation de données": "data_usage"
+}
