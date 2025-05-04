@@ -38,7 +38,7 @@ jobs:
         # Explicitly set JAVA_HOME for this step using the output from setup-java
         env:
           JAVA_HOME: ${{ env.JAVA_HOME_17_X64 }}
-        run: flutter build apk --release
+        run: flutter build apk --release > build_log.txt 2>&1
         # The output APK is typically in build/app/outputs/flutter-apk/app-release.apk
 
       - name: Upload APK Artifact
@@ -46,4 +46,12 @@ jobs:
         with:
           name: release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Upload Build Log
+        # Always run this step, even if the build fails, to capture logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build_log.txt
 
