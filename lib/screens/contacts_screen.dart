@@ -81,7 +81,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
       if (normalized != null) {
         return normalized;
       }
-    } catch (e) {
+    } catch (e, stacktrace) {
       print("Could not normalize number '$rawNumber' using libphonenumber: $e. Using basic cleanup.");
       String cleaned = rawNumber.replaceAll(RegExp(r'\s+|-|\(|\)'), '');
       if (cleaned.startsWith('0') && cleaned.length == 10) {
