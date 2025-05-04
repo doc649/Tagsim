@@ -28,33 +28,53 @@ class _ContactsScreenState extends State<ContactsScreen> {
   @override
   void initState() {
     super.initState();
+    print("ContactsScreen: initState called");
     _initializeScreen();
     _searchController.addListener(_filterContacts);
   }
 
   @override
   void dispose() {
+    print("ContactsScreen: dispose called");
     _searchController.removeListener(_filterContacts);
     _searchController.dispose();
     super.dispose();
   }
 
   Future<void> _initializeScreen() async {
-    if (!mounted) return;
+    print("ContactsScreen: _initializeScreen started");
+    if (!mounted) {
+      print("ContactsScreen: _initializeScreen aborted (not mounted)");
+      return;
+    }
     setState(() {
+      print("ContactsScreen: Setting _isLoading = true");
       _isLoading = true;
       _permissionDenied = false;
     });
-    await _recommender.loadTariffsIfNeeded();
-    await _fetchContacts();
+    try {
+      print("ContactsScreen: Loading tariffs...");
+      await _recommender.loadTariffsIfNeeded();
+      print("ContactsScreen: Tariffs loaded (or skipped if already loaded)");
+      print("ContactsScreen: Fetching contacts...");
+      await _fetchContacts();
+      print("ContactsScreen: Contacts fetched");
+    } catch (e, stacktrace) {
+      print("ContactsScreen: Error during _initializeScreen (tariff or contact fetch): $e\n$stacktrace");
+    }
     if (mounted) {
       setState(() {
+        print("ContactsScreen: Setting _isLoading = false");
         _isLoading = false;
       });
+    } else {
+      print("ContactsScreen: _initializeScreen finished but not mounted after async operations");
     }
+    print("ContactsScreen: _initializeScreen finished");
   }
 
   Future<String?> _normalizePhoneNumber(String rawNumber) async {
+    // ... (keep existing normalization logic with its logs)
     if (rawNumber.isEmpty) return null;
     try {
       String? normalized = await phone_util.PhoneNumberUtil.normalizePhoneNumber(rawNumber, 'DZ');
@@ -81,75 +101,98 @@ class _ContactsScreenState extends State<ContactsScreen> {
   // ------------------------------------------------------
 
   Future<void> _fetchContacts() async {
+    print("FETCH_CONTACTS: Starting _fetchContacts");
     PermissionStatus status = await Permission.contacts.request();
+    print("FETCH_CONTACTS: Permission status: $status");
 
     if (status.isGranted) {
+      print("FETCH_CONTACTS: Permission granted");
       if (mounted) {
+        print("FETCH_CONTACTS: Clearing existing contact lists (setState)");
         setState(() {
           _allContactsWithDetails.clear();
           _filteredContactsWithDetails.clear();
         });
       }
       try {
+        print("FETCH_CONTACTS: Calling FlutterContacts.getContacts...");
         List<Contact> contacts = await FlutterContacts.getContacts(
             withProperties: true, withPhoto: false);
+        print("FETCH_CONTACTS: Got ${contacts.length} contacts from plugin");
 
         List<ContactWithDetails> processedContacts = [];
         Map<String, ContactWithDetails> uniqueContactsByNumberMap = {};
         Set<String> processedNormalizedNumbersSet = {};
+        int contactIndex = 0;
 
         for (var contact in contacts) {
+          contactIndex++;
+          print("FETCH_CONTACTS: Processing contact ${contactIndex}/${contacts.length}, ID: ${contact.id}, Name: ${contact.displayName}");
+          int phoneIndex = 0;
           for (var phone in contact.phones) {
+            phoneIndex++;
+            print("FETCH_CONTACTS:   Phone ${phoneIndex}/${contact.phones.length}: ${phone.number}");
             if (phone.number.isNotEmpty) {
               String rawPhoneNumber = phone.number;
               String contactName = contact.displayName.isNotEmpty ? contact.displayName : "(No Name)";
 
-              print("DEBUG_CONTACT: Processing RawPhone='$rawPhoneNumber', ContactName='$contactName', ContactID='${contact.id}'");
+              // print("DEBUG_CONTACT: Processing RawPhone='$rawPhoneNumber', ContactName='$contactName', ContactID='${contact.id}'"); // Already exists
 
+              print("FETCH_CONTACTS:     Normalizing '$rawPhoneNumber'...");
               String? normalizedNumber = await _normalizePhoneNumber(rawPhoneNumber);
 
               if (normalizedNumber == null) {
-                 print("DEBUG_CONTACT: Skipping number due to normalization failure: Raw='$rawPhoneNumber', Contact='$contactName'");
+                 print("FETCH_CONTACTS:     Skipping number due to normalization failure: Raw='$rawPhoneNumber', Contact='$contactName'");
                  continue;
               }
+              print("FETCH_CONTACTS:     Normalized to '$normalizedNumber'");
 
               if (processedNormalizedNumbersSet.contains(normalizedNumber)) {
-                print("DEBUG_CONTACT: Skipping duplicate normalized number (Set check): Norm='$normalizedNumber', Raw='$rawPhoneNumber', Contact='$contactName'");
+                print("FETCH_CONTACTS:     Skipping duplicate normalized number (Set check): Norm='$normalizedNumber', Raw='$rawPhoneNumber', Contact='$contactName'");
                 continue;
               }
 
               processedNormalizedNumbersSet.add(normalizedNumber);
-              print("DEBUG_CONTACT: Processing unique number: Norm='$normalizedNumber', Raw='$rawPhoneNumber', Contact='$contactName'");
+              print("FETCH_CONTACTS:     Processing unique number: Norm='$normalizedNumber'");
 
               String? countryCode;
               String? flagEmoji;
               AlgerianMobileOperator operator = AlgerianMobileOperator.Unknown;
 
               try {
+                print("FETCH_CONTACTS:       Getting region info for '$normalizedNumber'...");
                 RegionInfo? regionInfo = await phone_util.PhoneNumberUtil.getRegionInfo(normalizedNumber, 'DZ');
                 if (regionInfo != null && regionInfo.isoCode != null) {
                   countryCode = regionInfo.isoCode;
+                  print("FETCH_CONTACTS:       Region info: Code=$countryCode");
                   if (countryCode != 'DZ') {
                     flagEmoji = emoji_converter.EmojiConverter.fromAlpha2CountryCode(countryCode!);
                   }
                   if (countryCode == 'DZ') {
                     operator = OperatorDetector.detectOperator(normalizedNumber);
+                    print("FETCH_CONTACTS:       Detected operator (DZ): $operator");
                   }
+                } else {
+                  print("FETCH_CONTACTS:       Region info was null or had no isoCode");
                 }
               } catch (e) {
-                print('Error getting region info for normalized number $normalizedNumber: $e');
+                print('FETCH_CONTACTS:       Error getting region info for normalized number $normalizedNumber: $e');
                 if (normalizedNumber.startsWith('+213')) {
                    operator = OperatorDetector.detectOperator(normalizedNumber);
+                   print("FETCH_CONTACTS:       Detected operator (DZ fallback): $operator");
                    if (operator != AlgerianMobileOperator.Unknown) {
                      countryCode = 'DZ';
                    }
                 }
               }
 
+              print("FETCH_CONTACTS:       Getting recommendation for '$normalizedNumber'...");
               Map<SimChoice, String?> recommendationResult = await _recommender.getBestSim(normalizedNumber);
               SimChoice recommendation = recommendationResult.keys.first;
               String? errorMsg = recommendationResult.values.first;
+              print("FETCH_CONTACTS:       Recommendation: $recommendation, Error: $errorMsg");
 
+              print("FETCH_CONTACTS:       Adding to uniqueContactsByNumberMap: Key='$normalizedNumber'");
               uniqueContactsByNumberMap[normalizedNumber] = ContactWithDetails(
                 contact: contact,
                 phoneNumber: normalizedNumber, // Store normalized number internally
@@ -159,12 +202,18 @@ class _ContactsScreenState extends State<ContactsScreen> {
                 recommendedSim: recommendation,
                 recommendationError: errorMsg,
               );
+              print("FETCH_CONTACTS:       Added successfully.");
 
+            } else {
+              print("FETCH_CONTACTS:   Skipping empty phone number.");
             }
           }
+          print("FETCH_CONTACTS: Finished processing phones for contact ${contactIndex}");
         }
+        print("FETCH_CONTACTS: Finished processing all contacts. Found ${uniqueContactsByNumberMap.length} unique numbers.");
 
         processedContacts = uniqueContactsByNumberMap.values.toList();
+        print("FETCH_CONTACTS: Sorting ${processedContacts.length} processed contacts...");
         processedContacts.sort((a, b) {
           int nameCompare = a.contact.displayName.toLowerCase().compareTo(b.contact.displayName.toLowerCase());
           if (nameCompare == 0) {
@@ -172,33 +221,44 @@ class _ContactsScreenState extends State<ContactsScreen> {
           }
           return nameCompare;
         });
+        print("FETCH_CONTACTS: Sorting complete.");
 
         if (mounted) {
+           print("FETCH_CONTACTS: Updating state with ${processedContacts.length} contacts (setState)");
            setState(() {
             _allContactsWithDetails = processedContacts;
             _filteredContactsWithDetails = processedContacts;
           });
+           print("FETCH_CONTACTS: setState completed.");
+        } else {
+           print("FETCH_CONTACTS: Not mounted after processing contacts, cannot update state.");
         }
-      } catch (e, stacktrace) { // Added stacktrace
-        print('Error fetching or processing contacts: $e\n$stacktrace'); // Print stacktrace
+      } catch (e, stacktrace) {
+        print('FETCH_CONTACTS: CRITICAL ERROR fetching or processing contacts: $e\n$stacktrace');
          if (mounted) {
+            print("FETCH_CONTACTS: Setting state to show error (optional)");
             setState(() {
               // Optionally set an error state here to display a message
+              // e.g., _showError = true; _errorMessage = e.toString();
             });
          }
       }
     } else {
+       print("FETCH_CONTACTS: Permission denied");
        if (mounted) {
+          print("FETCH_CONTACTS: Setting _permissionDenied = true (setState)");
           setState(() {
             _permissionDenied = true;
           });
        }
     }
+    print("FETCH_CONTACTS: Finished _fetchContacts");
   }
 
   void _filterContacts() {
     if (!mounted) return;
     String query = _searchController.text.toLowerCase();
+    print("ContactsScreen: Filtering contacts with query: '$query'");
     setState(() {
       _filteredContactsWithDetails = _allContactsWithDetails.where((details) {
         // Search in display name OR NORMALIZED phone number (reverted from formatted)
@@ -207,9 +267,11 @@ class _ContactsScreenState extends State<ContactsScreen> {
         return nameMatch || numberMatch;
       }).toList();
     });
+    print("ContactsScreen: Filtering complete, ${_filteredContactsWithDetails.length} results.");
   }
 
   String? _getOperatorLogoPath(AlgerianMobileOperator operator) {
+    // ... (keep existing logo logic)
     switch (operator) {
       case AlgerianMobileOperator.Djezzy:
         return 'assets/images/djezzy_logo.png';
@@ -224,6 +286,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
   }
 
    Future<void> _launchUniversalLink(Uri url) async {
+    // ... (keep existing launch logic)
     print("Attempting to launch URL: $url");
     try {
       final bool nativeAppLaunchSucceeded = await launchUrl(
@@ -250,6 +313,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
   }
 
   Widget _buildRecommendationIndicator(ContactWithDetails details) {
+    // ... (keep existing recommendation indicator logic)
     SimChoice recommendation = details.recommendedSim ?? SimChoice.none;
     String? errorMsg = details.recommendationError;
     IconData iconData;
@@ -290,6 +354,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    print("ContactsScreen: build called (_isLoading: $_isLoading, _permissionDenied: $_permissionDenied, _filteredContacts: ${_filteredContactsWithDetails.length})");
     return Scaffold(
       body: Column(
         children: [
@@ -322,11 +387,14 @@ class _ContactsScreenState extends State<ContactsScreen> {
   }
 
   Widget _buildBodyContent() {
+    print("ContactsScreen: _buildBodyContent called");
     if (_isLoading) {
+      print("ContactsScreen: Displaying loading indicator");
       return const Center(child: CircularProgressIndicator());
     }
 
     if (_permissionDenied) {
+      print("ContactsScreen: Displaying permission denied message");
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -358,16 +426,20 @@ class _ContactsScreenState extends State<ContactsScreen> {
     }
 
     if (_allContactsWithDetails.isEmpty && !_isLoading) {
+      print("ContactsScreen: Displaying 'Aucun contact trouvé.' message");
       return const Center(child: Text('Aucun contact trouvé.'));
     }
 
     if (_filteredContactsWithDetails.isEmpty && _searchController.text.isNotEmpty) {
+       print("ContactsScreen: Displaying 'Aucun contact ne correspond à votre recherche.' message");
        return const Center(child: Text('Aucun contact ne correspond à votre recherche.'));
     }
 
+    print("ContactsScreen: Displaying ListView with ${_filteredContactsWithDetails.length} items");
     return ListView.builder(
       itemCount: _filteredContactsWithDetails.length,
       itemBuilder: (context, index) {
+        // print("ContactsScreen: Building item $index"); // Can be too verbose
         final details = _filteredContactsWithDetails[index];
         final contact = details.contact;
         final logoPath = _getOperatorLogoPath(details.operatorInfo);
