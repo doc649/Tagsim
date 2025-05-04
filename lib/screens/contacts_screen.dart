@@ -303,8 +303,8 @@ class _ContactsScreenState extends State<ContactsScreen> {
         final String primaryText = hasName ? details.contact.displayName : formattedNumber;
 
         // Search in primary display text OR the secondary number if a name exists
-        final primaryMatch = primaryText.toLowerCase().contains(query);
-        final secondaryNumberMatch = hasName ? formattedNumber.toLowerCase().contains(query) : false;
+        final primaryMatch = primaryText.toLowerCase().startsWith(query);
+        final secondaryNumberMatch = hasName ? formattedNumber.toLowerCase().startsWith(query) : false;
 
         return primaryMatch || secondaryNumberMatch;
       }).toList();
@@ -517,13 +517,14 @@ class _ContactsScreenState extends State<ContactsScreen> {
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: 'Rechercher des contacts...',
-                prefixIcon: const Icon(Icons.search),
+                prefixIcon: const Icon(Icons.search_outlined),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
+                  borderRadius: BorderRadius.circular(25.0),
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
-                fillColor: Theme.of(context).inputDecorationTheme.fillColor ?? Colors.grey[200],
+                contentPadding: EdgeInsets.zero,
+                fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
               ),
             ),
           ),
