@@ -143,19 +143,20 @@ class _ContactsScreenState extends State<ContactsScreen> {
             print("FETCH_CONTACTS:   Phone ${phoneIndex}/${contact.phones.length}: ${phone.number}");
             if (phone.number.isNotEmpty) {
               String rawPhoneNumber = phone.number;
-              String contactName = contact.displayName.isNotEmpty ? contact.displayName : "(No Name)";
+              // Use displayName directly, check for emptiness later during display
+              // String contactName = contact.displayName.isNotEmpty ? contact.displayName : "(No Name)";
 
               print("FETCH_CONTACTS:     Normalizing '$rawPhoneNumber'...");
               String? normalizedNumber = await _normalizePhoneNumber(rawPhoneNumber);
 
               if (normalizedNumber == null) {
-                 print("FETCH_CONTACTS:     Skipping number due to normalization failure: Raw='$rawPhoneNumber', Contact='$contactName'");
+                 print("FETCH_CONTACTS:     Skipping number due to normalization failure: Raw='$rawPhoneNumber', Contact='${contact.displayName}'");
                  continue;
               }
               print("FETCH_CONTACTS:     Normalized to '$normalizedNumber'");
 
               if (processedNormalizedNumbersSet.contains(normalizedNumber)) {
-                print("FETCH_CONTACTS:     Skipping duplicate normalized number (Set check): Norm='$normalizedNumber', Raw='$rawPhoneNumber', Contact='$contactName'");
+                print("FETCH_CONTACTS:     Skipping duplicate normalized number (Set check): Norm='$normalizedNumber', Raw='$rawPhoneNumber', Contact='${contact.displayName}'");
                 continue;
               }
 
@@ -226,11 +227,17 @@ class _ContactsScreenState extends State<ContactsScreen> {
         processedContacts = uniqueContactsByNumberMap.values.toList();
         print("FETCH_CONTACTS: Sorting ${processedContacts.length} processed contacts...");
         processedContacts.sort((a, b) {
-          int nameCompare = a.contact.displayName.toLowerCase().compareTo(b.contact.displayName.toLowerCase());
-          if (nameCompare == 0) {
-            return (a.phoneNumber ?? '').compareTo(b.phoneNumber ?? '');
+          // Sort primarily by display name, treating empty names consistently
+          bool aHasName = a.contact.displayName.isNotEmpty;
+          bool bHasName = b.contact.displayName.isNotEmpty;
+          if (aHasName && !bHasName) return -1; // Contacts with names first
+          if (!aHasName && bHasName) return 1;  // Contacts without names last
+          if (aHasName && bHasName) { // Both have names, sort alphabetically
+            int nameCompare = a.contact.displayName.toLowerCase().compareTo(b.contact.displayName.toLowerCase());
+            if (nameCompare != 0) return nameCompare;
           }
-          return nameCompare;
+          // If names are the same or both are empty, sort by phone number
+          return (a.phoneNumber ?? '').compareTo(b.phoneNumber ?? '');
         });
         print("FETCH_CONTACTS: Sorting complete.");
 
@@ -272,11 +279,16 @@ class _ContactsScreenState extends State<ContactsScreen> {
     print("ContactsScreen: Filtering contacts with query: '$query'");
     setState(() {
       _filteredContactsWithDetails = _allContactsWithDetails.where((details) {
-        // Search in display name OR FORMATTED phone number for consistency with display
-        final nameMatch = details.contact.displayName.toLowerCase().contains(query);
-        final formattedNumberForSearch = _formatPhoneNumberForDisplay(details.phoneNumber).toLowerCase();
-        final numberMatch = formattedNumberForSearch.contains(query);
-        return nameMatch || numberMatch;
+        // Determine the primary display text (name or formatted number)
+        final bool hasName = details.contact.displayName.isNotEmpty;
+        final String formattedNumber = _formatPhoneNumberForDisplay(details.phoneNumber);
+        final String primaryText = hasName ? details.contact.displayName : formattedNumber;
+
+        // Search in primary display text OR the secondary number if a name exists
+        final primaryMatch = primaryText.toLowerCase().contains(query);
+        final secondaryNumberMatch = hasName ? formattedNumber.toLowerCase().contains(query) : false;
+
+        return primaryMatch || secondaryNumberMatch;
       }).toList();
     });
     print("ContactsScreen: Filtering complete, ${_filteredContactsWithDetails.length} results.");
@@ -369,6 +381,111 @@ class _ContactsScreenState extends State<ContactsScreen> {
     */
   }
 
+  Widget _buildBodyContent() {
+    print("ContactsScreen: _buildBodyContent called (_isLoading: $_isLoading, _permissionDenied: $_permissionDenied, _filteredContacts: ${_filteredContactsWithDetails.length})");
+    if (_isLoading) {
+      print("ContactsScreen: Displaying loading indicator");
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_permissionDenied) {
+      print("ContactsScreen: Displaying permission denied message");
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                'Permission d\'accès aux contacts refusée.',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () {
+                  print("ContactsScreen: Opening app settings...");
+                  openAppSettings();
+                },
+                child: const Text('Ouvrir les paramètres'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    if (_filteredContactsWithDetails.isEmpty && _searchController.text.isEmpty) {
+      print("ContactsScreen: Displaying 'Aucun contact trouvé' message");
+      return const Center(child: Text('Aucun contact trouvé.'));
+    }
+    if (_filteredContactsWithDetails.isEmpty && _searchController.text.isNotEmpty) {
+      print("ContactsScreen: Displaying 'Aucun résultat' message for search");
+      return const Center(child: Text('Aucun résultat pour votre recherche.'));
+    }
+
+    print("ContactsScreen: Building contact list with ${_filteredContactsWithDetails.length} items");
+    return ListView.builder(
+      itemCount: _filteredContactsWithDetails.length,
+      itemBuilder: (context, index) {
+        final details = _filteredContactsWithDetails[index];
+        final contact = details.contact;
+        final formattedNumber = _formatPhoneNumberForDisplay(details.phoneNumber);
+        final bool hasName = contact.displayName.isNotEmpty;
+
+        // Determine title and subtitle based on whether the contact has a name
+        final String titleText = hasName ? contact.displayName : formattedNumber;
+        final String? subtitleText = hasName ? formattedNumber : null; // Subtitle is null if no name
+
+        final logoPath = _getOperatorLogoPath(details.operatorInfo);
+
+        return ListTile(
+          leading: CircleAvatar(
+            // Placeholder for contact photo or initials
+            child: Text(hasName ? contact.displayName[0].toUpperCase() : '#'),
+          ),
+          title: Row(
+            children: [
+              Expanded(child: Text(titleText)),
+              if (details.countryFlagEmoji != null)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8.0),
+                  child: Text(details.countryFlagEmoji!),
+                ),
+              if (logoPath != null)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8.0),
+                  child: Image.asset(logoPath, height: 16),
+                ),
+              // _buildRecommendationIndicator(details), // Recommendation disabled
+            ],
+          ),
+          subtitle: subtitleText != null ? Text(subtitleText) : null, // Only show subtitle if it's not null
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.call_outlined),
+                onPressed: () {
+                  if (details.phoneNumber != null) {
+                    _launchUniversalLink(Uri(scheme: 'tel', path: details.phoneNumber));
+                  }
+                },
+                tooltip: 'Appeler',
+              ),
+              IconButton(
+                icon: const Icon(Icons.message_outlined),
+                onPressed: () {
+                  if (details.phoneNumber != null) {
+                    _launchUniversalLink(Uri(scheme: 'sms', path: details.phoneNumber));
+                  }
+                },
+                tooltip: 'Envoyer SMS',
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     print("ContactsScreen: build called (_isLoading: $_isLoading, _permissionDenied: $_permissionDenied, _filteredContacts: ${_filteredContactsWithDetails.length})");
@@ -381,154 +498,24 @@ class _ContactsScreenState extends State<ContactsScreen> {
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: 'Rechercher des contacts...',
-                prefixIcon: const Icon(Icons.search_outlined),
+                prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(25.0),
+                  borderRadius: BorderRadius.circular(8.0),
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
-                contentPadding: EdgeInsets.zero,
-                fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                fillColor: Theme.of(context).inputDecorationTheme.fillColor ?? Colors.grey[200],
               ),
             ),
           ),
-          Expanded(child: _buildBodyContent()),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: _initializeScreen,
+              child: _buildBodyContent(),
+            ),
+          ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _initializeScreen,
-        tooltip: 'Rafraîchir les contacts',
-        child: const Icon(Icons.refresh_outlined),
-      ),
-    );
-  }
-
-  Widget _buildBodyContent() {
-    print("ContactsScreen: _buildBodyContent called");
-    if (_isLoading) {
-      print("ContactsScreen: Displaying loading indicator");
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_permissionDenied) {
-      print("ContactsScreen: Displaying permission denied message");
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.perm_contact_calendar_outlined, size: 64),
-              const SizedBox(height: 16),
-              const Text(
-                'Permission d\'accès aux contacts refusée.',
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.settings_outlined),
-                onPressed: openAppSettings,
-                label: const Text('Ouvrir les paramètres'),
-              ),
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
-                icon: const Icon(Icons.refresh_outlined),
-                onPressed: _initializeScreen,
-                label: const Text('Réessayer'),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    if (_allContactsWithDetails.isEmpty && !_isLoading) {
-      print("ContactsScreen: Displaying 'Aucun contact trouvé.' message");
-      return const Center(child: Text('Aucun contact trouvé.'));
-    }
-
-    if (_filteredContactsWithDetails.isEmpty && _searchController.text.isNotEmpty) {
-       print("ContactsScreen: Displaying 'Aucun contact ne correspond à votre recherche.' message");
-       return const Center(child: Text('Aucun contact ne correspond à votre recherche.'));
-    }
-
-    print("ContactsScreen: Displaying ListView with ${_filteredContactsWithDetails.length} items");
-    return ListView.builder(
-      itemCount: _filteredContactsWithDetails.length,
-      itemBuilder: (context, index) {
-        // print("ContactsScreen: Building item $index"); // Can be too verbose
-        final details = _filteredContactsWithDetails[index];
-        final contact = details.contact;
-        final logoPath = _getOperatorLogoPath(details.operatorInfo);
-        final phoneNumber = details.phoneNumber; // Normalized number stored internally
-        final String formattedNumberForDisplay = _formatPhoneNumberForDisplay(phoneNumber); // Format for display
-
-        // Determine display name: Use contact name if available, otherwise use the FORMATTED phone number
-        final String displayName = contact.displayName.isNotEmpty ? contact.displayName : formattedNumberForDisplay;
-        final String leadingText = contact.displayName.isNotEmpty ? contact.displayName[0].toUpperCase() : '#'; // Use '#' for contacts without name
-
-        return ListTile(
-          leading: CircleAvatar(
-            child: Text(leadingText),
-          ),
-          title: Text(displayName),
-          subtitle: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              if (details.countryFlagEmoji != null)
-                Padding(
-                  padding: const EdgeInsets.only(right: 4.0),
-                  child: Text(details.countryFlagEmoji!, style: const TextStyle(fontSize: 16)),
-                ),
-              // Display FORMATTED number in subtitle only if name is present
-              if (contact.displayName.isNotEmpty)
-                 Expanded(child: Text(formattedNumberForDisplay)),
-              // If no name, the number is already in the title (formatted), so don't repeat in subtitle
-              if (contact.displayName.isEmpty)
-                 const Expanded(child: SizedBox.shrink()), // Show nothing if name is empty
-
-              _buildRecommendationIndicator(details), // This will now return SizedBox.shrink()
-              if (logoPath != null)
-                Padding(
-                  padding: const EdgeInsets.only(left: 8.0),
-                  child: Image.asset(
-                    logoPath,
-                    height: 24,
-                    errorBuilder: (context, error, stackTrace) => const Icon(Icons.error_outline, size: 16),
-                  ),
-                ),
-            ],
-          ),
-          // Actions should still use the normalized number (+213...) for tel: and sms: URIs
-          trailing: phoneNumber != null
-              ? Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.call_outlined),
-                      tooltip: 'Appeler',
-                      onPressed: () {
-                        if (phoneNumber != null) {
-                          final Uri callUri = Uri(scheme: 'tel', path: phoneNumber); // Use normalized number
-                          _launchUniversalLink(callUri);
-                        }
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.message_outlined),
-                      tooltip: 'Envoyer SMS',
-                      onPressed: () {
-                        if (phoneNumber != null) {
-                          final Uri smsUri = Uri(scheme: 'sms', path: phoneNumber); // Use normalized number
-                          _launchUniversalLink(smsUri);
-                        }
-                      },
-                    ),
-                  ],
-                )
-              : null,
-        );
-      },
     );
   }
 }
