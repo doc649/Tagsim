@@ -40,12 +40,13 @@ class _ContactsScreenState extends State<ContactsScreen> {
   }
 
   Future<void> _initializeScreen() async {
+    if (!mounted) return; // Check if the state is still mounted
     setState(() {
       _isLoading = true;
       _permissionDenied = false;
     });
     await _fetchContacts();
-    if (mounted) {
+    if (mounted) { // Check again if mounted after async operation
       setState(() {
         _isLoading = false;
       });
@@ -67,6 +68,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
         List<Contact> contacts = await FlutterContacts.getContacts(
             withProperties: true, withPhoto: false);
 
+        // Use local variables within the try block scope
         List<ContactWithDetails> processedContacts = [];
         Map<String, ContactWithDetails> uniqueContacts = {}; // Use Map to handle duplicates by contact ID
 
@@ -86,7 +88,6 @@ class _ContactsScreenState extends State<ContactsScreen> {
             String? countryCode;
             String? flagEmoji;
             AlgerianMobileOperator operator = AlgerianMobileOperator.Unknown;
-            // SimChoice recommendation = SimChoice.none; // Default recommendation <-- REMOVED
 
             try {
               RegionInfo? regionInfo = await phone_util.PhoneNumberUtil.getRegionInfo(phoneNumber, 'DZ');
@@ -112,28 +113,33 @@ class _ContactsScreenState extends State<ContactsScreen> {
               }
             }
 
-                print("Processing contact: ID=${contact.id}, Name=${contact.displayName}, Phone=$phoneNumber"); // Log processing
+            print("Processing contact: ID=${contact.id}, Name=${contact.displayName}, Phone=$phoneNumber"); // Log processing
 
-                // Get recommendation and potential error message
-                Map<SimChoice, String?> recommendationResult = await _recommender.getBestSim(phoneNumber);
-                SimChoice recommendation = recommendationResult.keys.first;
-                String? errorMsg = recommendationResult.values.first;
+            // Get recommendation and potential error message
+            Map<SimChoice, String?> recommendationResult = await _recommender.getBestSim(phoneNumber);
+            SimChoice recommendation = recommendationResult.keys.first;
+            String? errorMsg = recommendationResult.values.first;
 
-                uniqueContacts[contact.id] = ContactWithDetails(
-                  contact: contact,
-                  phoneNumber: phoneNumber, // Store only the first number
-                  countryCode: countryCode,
-                  countryFlagEmoji: flagEmoji,
-                  operatorInfo: operator,
-                  recommendedSim: recommendation,
-                  recommendationError: errorMsg, // Store the error message
-                );
-                 print("Added contact to map: ID=${contact.id}"); // Log addition
-              } else {
-                 print("Skipping duplicate contact ID: ${contact.id}, Name=${contact.displayName}"); // Log skip
-              }
+            uniqueContacts[contact.id] = ContactWithDetails(
+              contact: contact,
+              phoneNumber: phoneNumber, // Store only the first number
+              countryCode: countryCode,
+              countryFlagEmoji: flagEmoji,
+              operatorInfo: operator,
+              recommendedSim: recommendation,
+              recommendationError: errorMsg, // Store the error message
+            );
+            print("Added contact to map: ID=${contact.id}"); // Log addition
+          } else {
+            // Optionally log skipped contacts (already processed or no valid phone)
+            if (firstValidPhone == null) {
+              // print("Skipping contact with no valid phone: ID=${contact.id}, Name=${contact.displayName}");
+            } else {
+              // print("Skipping duplicate contact ID: ${contact.id}, Name=${contact.displayName}"); // Already logged if needed
+            }
           }
-        }
+        } // End of for loop
+
         processedContacts = uniqueContacts.values.toList(); // Convert map values back to list
         processedContacts.sort((a, b) => a.contact.displayName.toLowerCase().compareTo(b.contact.displayName.toLowerCase()));
 
@@ -143,15 +149,14 @@ class _ContactsScreenState extends State<ContactsScreen> {
             _filteredContactsWithDetails = processedContacts;
           });
         }
-      // Moved the closing brace for 'try' here
-      } catch (e) { // Reverted to simple catch (e)
+      } catch (e) { // Correct catch block
         print('Error fetching contacts: $e');
          if (mounted) {
             setState(() {
-              // Handle error state if needed
+              // Handle error state if needed, e.g., show a message
             });
          }
-      } // Closing brace for 'catch'
+      }
     } else {
        if (mounted) {
           setState(() {
@@ -162,6 +167,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
   }
 
   void _filterContacts() {
+    if (!mounted) return;
     String query = _searchController.text.toLowerCase();
     setState(() {
       _filteredContactsWithDetails = _allContactsWithDetails.where((details) {
@@ -207,9 +213,13 @@ class _ContactsScreenState extends State<ContactsScreen> {
     } catch (e, stacktrace) { // Added stacktrace
       print("Could not launch $url: $e\n$stacktrace"); // Log error with stacktrace
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Impossible de lancer l'action pour ${url.scheme}")),
-        );
+        // Use ScaffoldMessenger safely
+        final scaffoldMessenger = ScaffoldMessenger.maybeOf(context);
+        if (scaffoldMessenger != null) {
+          scaffoldMessenger.showSnackBar(
+            SnackBar(content: Text("Impossible de lancer l'action pour ${url.scheme}")),
+          );
+        }
       }
     }
   }
@@ -253,9 +263,11 @@ class _ContactsScreenState extends State<ContactsScreen> {
     );
   }
 
+  // This is the main build method for the State
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // Removed AppBar as it's likely handled by the main navigation structure
       body: Column(
         children: [
           Padding(
@@ -275,18 +287,19 @@ class _ContactsScreenState extends State<ContactsScreen> {
               ),
             ),
           ),
-          Expanded(child: _buildBody()),
+          Expanded(child: _buildBodyContent()), // Delegate body to separate method
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _initializeScreen,
+        onPressed: _initializeScreen, // Refresh action
         tooltip: 'Rafraîchir les contacts et recommandations',
         child: const Icon(Icons.refresh_outlined),
       ),
     );
   }
 
-  Widget _buildBody() {
+  // Helper method to build the main content area (list or messages)
+  Widget _buildBodyContent() {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -307,7 +320,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
               const SizedBox(height: 16),
               ElevatedButton.icon(
                 icon: const Icon(Icons.settings_outlined),
-                onPressed: openAppSettings,
+                onPressed: openAppSettings, // Function from permission_handler
                 label: const Text('Ouvrir les paramètres'),
               ),
               const SizedBox(height: 8),
@@ -322,7 +335,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
       );
     }
 
-    if (_allContactsWithDetails.isEmpty) {
+    if (_allContactsWithDetails.isEmpty && !_isLoading) {
       return const Center(child: Text('Aucun contact trouvé.'));
     }
 
@@ -330,6 +343,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
        return const Center(child: Text('Aucun contact ne correspond à votre recherche.'));
     }
 
+    // Display the list using filtered contacts
     return ListView.builder(
       itemCount: _filteredContactsWithDetails.length,
       itemBuilder: (context, index) {
@@ -337,7 +351,6 @@ class _ContactsScreenState extends State<ContactsScreen> {
         final contact = details.contact;
         final logoPath = _getOperatorLogoPath(details.operatorInfo);
         final phoneNumber = details.phoneNumber;
-        final recommendation = details.recommendedSim ?? SimChoice.none;
 
         return ListTile(
           leading: CircleAvatar(
@@ -347,14 +360,17 @@ class _ContactsScreenState extends State<ContactsScreen> {
           subtitle: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Only show flag if it's not null (i.e., not DZ)
+              // Flag (only if not DZ)
               if (details.countryFlagEmoji != null)
                 Padding(
                   padding: const EdgeInsets.only(right: 4.0),
                   child: Text(details.countryFlagEmoji!, style: const TextStyle(fontSize: 16)),
                 ),
-              Expanded(child: Text(phoneNumber ?? 'Pas de numéro')),
+              // Phone Number (Expanded)
+              Expanded(child: Text(phoneNumber ?? 'Pas de numéro')), // Handle null phone number
+              // Recommendation Indicator
               _buildRecommendationIndicator(details),
+              // Operator Logo
               if (logoPath != null)
                 Padding(
                   padding: const EdgeInsets.only(left: 8.0),
@@ -370,25 +386,33 @@ class _ContactsScreenState extends State<ContactsScreen> {
               ? Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    // Call Button
                     IconButton(
                       icon: const Icon(Icons.call_outlined),
                       tooltip: 'Appeler',
                       onPressed: () {
-                        final Uri callUri = Uri(scheme: 'tel', path: phoneNumber);
-                        _launchUniversalLink(callUri);
+                        // Ensure phone number is not null before attempting call
+                        if (phoneNumber != null) {
+                          final Uri callUri = Uri(scheme: 'tel', path: phoneNumber);
+                          _launchUniversalLink(callUri);
+                        }
                       },
                     ),
+                    // SMS Button
                     IconButton(
                       icon: const Icon(Icons.message_outlined),
                       tooltip: 'Envoyer SMS',
                       onPressed: () {
-                        final Uri smsUri = Uri(scheme: 'sms', path: phoneNumber);
-                        _launchUniversalLink(smsUri);
+                        // Ensure phone number is not null before attempting SMS
+                        if (phoneNumber != null) {
+                          final Uri smsUri = Uri(scheme: 'sms', path: phoneNumber);
+                          _launchUniversalLink(smsUri);
+                        }
                       },
                     ),
                   ],
                 )
-              : null,
+              : null, // No trailing icons if phone number is null
         );
       },
     );
