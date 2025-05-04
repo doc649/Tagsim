@@ -106,7 +106,10 @@ class SmartCallRecommender {
       return result;
 
     } catch (e, stacktrace) { // Added stacktrace
-      print('Error in getBestSim: $e\n$stacktrace'); // Log stacktrace
+      print("Error calculating best SIM for $destinationNumber:");
+      print("Error Type: ${e.runtimeType}");
+      print("Error Message: $e");
+      print("Stacktrace:\n$stacktrace"); // Log stacktrace
       return SimChoice.error;
     }
   }

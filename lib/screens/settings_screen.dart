@@ -105,9 +105,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               // TODO: Implement SIM configuration screen
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Fonctionnalité non implémentée.')),
-              );
+              // Temporarily removed SnackBar until feature is ready
+              // ScaffoldMessenger.of(context).showSnackBar(
+              //   const SnackBar(content: Text("Fonctionnalité non implémentée.")),
+              // );
             },
           ),
           ListTile(
