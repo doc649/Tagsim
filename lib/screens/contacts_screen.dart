@@ -452,6 +452,10 @@ class _ContactsScreenState extends State<ContactsScreen> {
         final String titleText = hasName ? contact.displayName : formattedNumber;
         final String? subtitleText = hasName ? formattedNumber : null; // Subtitle is null if no name
 
+        // --- DEBUG LOG --- //
+        print("BUILD_LIST_ITEM: Index=$index, HasName=$hasName, Title=\"$titleText\", Subtitle=\"$subtitleText\"");
+        // --- END DEBUG LOG --- //
+
         final logoPath = _getOperatorLogoPath(details.operatorInfo);
 
         return ListTile(
