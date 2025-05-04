@@ -40,28 +40,25 @@ class _ContactsScreenState extends State<ContactsScreen> {
   }
 
   Future<void> _initializeScreen() async {
-    if (!mounted) return; // Check if the state is still mounted
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
       _permissionDenied = false;
     });
-    // Ensure recommender has tariffs loaded before fetching contacts
     await _recommender.loadTariffsIfNeeded();
     await _fetchContacts();
-    if (mounted) { // Check again if mounted after async operation
+    if (mounted) {
       setState(() {
         _isLoading = false;
       });
     }
   }
 
-  // --- Helper Function for Number Normalization ---
   Future<String?> _normalizePhoneNumber(String rawNumber) async {
     if (rawNumber.isEmpty) return null;
     try {
       String? normalized = await phone_util.PhoneNumberUtil.normalizePhoneNumber(rawNumber, 'DZ');
       if (normalized != null) {
-        // print("Normalized '$rawNumber' to '$normalized'"); // Keep log minimal for now
         return normalized;
       }
     } catch (e) {
@@ -78,7 +75,6 @@ class _ContactsScreenState extends State<ContactsScreen> {
     print("Normalization resulted in null for '$rawNumber'. Skipping number.");
     return null;
   }
-  // ----------------------------------------------
 
   Future<void> _fetchContacts() async {
     PermissionStatus status = await Permission.contacts.request();
@@ -95,31 +91,35 @@ class _ContactsScreenState extends State<ContactsScreen> {
             withProperties: true, withPhoto: false);
 
         List<ContactWithDetails> processedContacts = [];
-        // Use Map for storing final details, and Set for explicit duplicate check as requested
         Map<String, ContactWithDetails> uniqueContactsByNumberMap = {};
-        Set<String> processedNormalizedNumbersSet = {}; // Explicit Set for duplicate check
+        Set<String> processedNormalizedNumbersSet = {};
 
         for (var contact in contacts) {
           for (var phone in contact.phones) {
             if (phone.number.isNotEmpty) {
               String rawPhoneNumber = phone.number;
+              String contactName = contact.displayName.isNotEmpty ? contact.displayName : "(No Name)"; // Get contact name or placeholder
+
+              // --- Log before normalization ---
+              print("DEBUG_CONTACT: Processing RawPhone='$rawPhoneNumber', ContactName='$contactName', ContactID='${contact.id}'");
+              // --------------------------------
+
               String? normalizedNumber = await _normalizePhoneNumber(rawPhoneNumber);
 
               if (normalizedNumber == null) {
-                 print("DEBUG: Skipping number due to normalization failure: Raw='$rawPhoneNumber', Contact='${contact.displayName}'");
-                 continue; // Skip this phone number
+                 print("DEBUG_CONTACT: Skipping number due to normalization failure: Raw='$rawPhoneNumber', Contact='$contactName'");
+                 continue;
               }
 
-              // --- Explicit Duplicate Check using Set (as requested) ---
+              // --- Explicit Duplicate Check using Set ---
               if (processedNormalizedNumbersSet.contains(normalizedNumber)) {
-                print("DEBUG: Skipping duplicate normalized number (Set check): '$normalizedNumber', Raw='$rawPhoneNumber', Contact='${contact.displayName}'");
-                continue; // Skip this phone number as it's a duplicate
+                print("DEBUG_CONTACT: Skipping duplicate normalized number (Set check): Norm='$normalizedNumber', Raw='$rawPhoneNumber', Contact='$contactName'");
+                continue;
               }
-              // --------------------------------------------------------
+              // -----------------------------------------
 
-              // Add to Set and Map if it's a new number
               processedNormalizedNumbersSet.add(normalizedNumber);
-              print("Processing unique number: '$normalizedNumber', Raw='$rawPhoneNumber', Contact='${contact.displayName}'");
+              print("DEBUG_CONTACT: Processing unique number: Norm='$normalizedNumber', Raw='$rawPhoneNumber', Contact='$contactName'");
 
               String? countryCode;
               String? flagEmoji;
@@ -150,7 +150,6 @@ class _ContactsScreenState extends State<ContactsScreen> {
               SimChoice recommendation = recommendationResult.keys.first;
               String? errorMsg = recommendationResult.values.first;
 
-              // Store in the Map using the normalized number as key
               uniqueContactsByNumberMap[normalizedNumber] = ContactWithDetails(
                 contact: contact,
                 phoneNumber: normalizedNumber,
@@ -161,12 +160,20 @@ class _ContactsScreenState extends State<ContactsScreen> {
                 recommendationError: errorMsg,
               );
 
-            } // End if phone.number.isNotEmpty
-          } // End of phone numbers loop
-        } // End of contacts loop
+            }
+          }
+        }
 
         processedContacts = uniqueContactsByNumberMap.values.toList();
-        processedContacts.sort((a, b) => a.contact.displayName.toLowerCase().compareTo(b.contact.displayName.toLowerCase()));
+        // Sort primarily by name, then by number for contacts without names
+        processedContacts.sort((a, b) {
+          int nameCompare = a.contact.displayName.toLowerCase().compareTo(b.contact.displayName.toLowerCase());
+          if (nameCompare == 0) {
+            // If names are the same (or both empty), sort by phone number
+            return (a.phoneNumber ?? '').compareTo(b.phoneNumber ?? '');
+          }
+          return nameCompare;
+        });
 
         if (mounted) {
            setState(() {
@@ -269,7 +276,8 @@ class _ContactsScreenState extends State<ContactsScreen> {
       case SimChoice.error:
         iconData = Icons.error_outline;
         iconColor = Colors.orange;
-        tooltip = errorMsg ?? 'Erreur lors du calcul de la recommandation';
+        // Use the detailed error message from the recommender logic
+        tooltip = errorMsg ?? 'Erreur inconnue de recommandation';
         break;
     }
 
@@ -367,11 +375,15 @@ class _ContactsScreenState extends State<ContactsScreen> {
         final logoPath = _getOperatorLogoPath(details.operatorInfo);
         final phoneNumber = details.phoneNumber; // Normalized number
 
+        // Determine display name: Use contact name if available, otherwise use the phone number
+        final String displayName = contact.displayName.isNotEmpty ? contact.displayName : (phoneNumber ?? '(Numéro inconnu)');
+        final String leadingText = contact.displayName.isNotEmpty ? contact.displayName[0].toUpperCase() : '#'; // Use '#' for contacts without name
+
         return ListTile(
           leading: CircleAvatar(
-            child: Text(contact.displayName.isNotEmpty ? contact.displayName[0].toUpperCase() : '?'),
+            child: Text(leadingText),
           ),
-          title: Text(contact.displayName.isNotEmpty ? contact.displayName : '(Sans nom)'),
+          title: Text(displayName),
           subtitle: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -380,7 +392,13 @@ class _ContactsScreenState extends State<ContactsScreen> {
                   padding: const EdgeInsets.only(right: 4.0),
                   child: Text(details.countryFlagEmoji!, style: const TextStyle(fontSize: 16)),
                 ),
-              Expanded(child: Text(phoneNumber ?? 'Numéro invalide')),
+              // Display normalized number in subtitle only if name is present
+              if (contact.displayName.isNotEmpty)
+                 Expanded(child: Text(phoneNumber ?? 'Numéro invalide')),
+              // If no name, the number is already in the title, so don't repeat in subtitle (or show something else)
+              if (contact.displayName.isEmpty)
+                 const Expanded(child: Text('(Numéro affiché comme nom)')), // Placeholder or empty
+
               _buildRecommendationIndicator(details),
               if (logoPath != null)
                 Padding(

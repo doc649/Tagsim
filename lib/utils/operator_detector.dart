@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'dart:io'; // Import for FileSystemException
+
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show rootBundle;
-import 'package:shared_preferences/shared_preferences.dart'; // Import SharedPreferences
+import 'package:flutter/services.dart' show rootBundle, PlatformException;
+import 'package:shared_preferences/shared_preferences.dart';
 
 // Enum to represent the mobile operators
 enum AlgerianMobileOperator {
@@ -17,25 +19,20 @@ class OperatorDetector {
 
   /// Detects the operator based on the phone number prefix.
   static AlgerianMobileOperator detectOperator(String phoneNumber) {
-    // Normalize the phone number: remove spaces, hyphens
-    String normalizedNumber = phoneNumber.replaceAll(RegExp(r'\s+|-\s*'), ''); // Improved regex
+    String normalizedNumber = phoneNumber.replaceAll(RegExp(r'\s+|-\s*'), '');
 
-    // Remove international prefix if present (+213 or 00213)
     if (normalizedNumber.startsWith('+213')) {
       normalizedNumber = '0${normalizedNumber.substring(4)}';
     } else if (normalizedNumber.startsWith('00213')) {
       normalizedNumber = '0${normalizedNumber.substring(5)}';
     }
 
-    // Ensure the number starts with '0' and has at least 3 digits (0 + prefix + number)
     if (!normalizedNumber.startsWith('0') || normalizedNumber.length < 3) {
       return AlgerianMobileOperator.Unknown;
     }
 
-    // Extract the prefix (the digit after the initial '0')
     String prefix = normalizedNumber.substring(1, 2);
 
-    // Determine the operator based on the prefix
     switch (prefix) {
       case '5':
         return AlgerianMobileOperator.Ooredoo;
@@ -52,81 +49,103 @@ class OperatorDetector {
 
   /// Loads the tariff data from the 'assets/data/tarifs.json' file.
   ///
-  /// Returns a Map representing the parsed JSON data.
-  /// Returns an empty map if loading or parsing fails.
+  /// Returns a Map containing the parsed JSON data.
+  /// Throws a detailed exception if loading or parsing fails.
   static Future<Map<String, dynamic>> loadTariffs() async {
+    const String assetPath = 'assets/data/tarifs.json';
+    print("Attempting to load tariffs from: $assetPath"); // Log start
     try {
-      final String jsonString = await rootBundle.loadString('assets/data/tarifs.json');
-      final Map<String, dynamic> data = json.decode(jsonString);
-      return data;
+      final String jsonString = await rootBundle.loadString(assetPath);
+      print("Successfully loaded tariff file content."); // Log success load
+      if (jsonString.isEmpty) {
+        print("Error: Tariff file '$assetPath' is empty.");
+        throw Exception("Tariff file is empty");
+      }
+      try {
+        final Map<String, dynamic> data = json.decode(jsonString);
+        print("Successfully parsed tariff JSON data."); // Log success parse
+        if (data.isEmpty) {
+           print("Warning: Parsed tariff data is an empty map.");
+           // Decide if this is an error or acceptable
+           // throw Exception("Parsed tariff data is empty");
+        }
+        return data;
+      } on FormatException catch (e) {
+        print("Error parsing tariff JSON from '$assetPath': $e");
+        throw Exception("Invalid JSON format in tariff file: ${e.message}");
+      }
+    } on FlutterError catch (e) { // More specific catch for asset loading errors
+       print("Error loading asset '$assetPath': $e");
+       if (e.message.contains("Unable to load asset")) {
+         throw Exception("Tariff file not found at '$assetPath'");
+       } else {
+         throw Exception("Asset loading error: ${e.message}");
+       }
     } catch (e) {
-      print('Error loading or parsing tariffs.json: $e');
-      return {};
+      print("Unexpected error loading or parsing '$assetPath': $e");
+      throw Exception("Unexpected error loading tariffs: ${e.toString()}");
     }
   }
 
   /// Calculates the estimated cost per minute for a call, considering bonuses.
   ///
-  /// Uses the loaded tariff data, the selected calling SIM ('sim1' or 'sim2'),
-  /// the destination phone number, and SharedPreferences to check for bonuses.
   /// Returns the cost as a double (0.0 if a relevant bonus applies), or a default high cost (e.g., 999.0) if tariffs are missing.
   static Future<double> calculateCallCost({
     required Map<String, dynamic> tariffsData,
     required String callingSimId, // 'sim1' or 'sim2'
     required String destinationNumber,
-    required SharedPreferences prefs, // Pass SharedPreferences instance
+    required SharedPreferences prefs,
   }) async {
 
     // --- Bonus Check --- 
-    // Check for bonus credit on the calling SIM
     String? bonusCredit = prefs.getString('${callingSimId}_credit');
-    // TODO: Add more sophisticated bonus logic:
-    // - Check validity (prefs.getString('${callingSimId}_validity'))
-    // - Differentiate bonus types (e.g., bonus towards specific networks)
-    // - Consider data bonus for potential VoIP calls (complex)
     if (bonusCredit != null && bonusCredit.isNotEmpty) {
-      // Simple check: If bonus is 'Illimité' or a positive number (assuming format like '500 DA')
       if (bonusCredit.toLowerCase() == 'illimité' || (double.tryParse(bonusCredit.split(' ')[0]) ?? 0) > 0) {
          print('Bonus credit found for $callingSimId, applying 0 cost.');
-         return 0.0; // Bonus applies, call is considered free
+         return 0.0;
       }
     }
     // --- End Bonus Check ---
 
     // --- Standard Tariff Calculation --- 
+    if (tariffsData.isEmpty) {
+      print('Error: Cannot calculate cost, tariffsData is empty.');
+      return 999.0; // Indicate error due to missing tariffs
+    }
+
     final AlgerianMobileOperator destinationOperatorEnum = detectOperator(destinationNumber);
     final String destinationOperatorName = getOperatorName(destinationOperatorEnum);
-
-    // Get the operator of the calling SIM (needed for operator_tariffs)
     final String callingSimOperator = tariffsData[callingSimId]?['operator'] ?? 'Unknown';
 
-    // Get the standard tariffs based on the calling operator
+    if (callingSimOperator == 'Unknown') {
+       print('Error: Calling SIM operator is Unknown for $callingSimId.');
+       // Maybe fallback to SIM-specific tariffs directly?
+    }
+
     final Map<String, dynamic>? operatorTariffs = tariffsData['operator_tariffs']?[callingSimOperator];
 
     if (operatorTariffs == null) {
-       print('Error: Standard tariff data not found for operator $callingSimOperator');
-       // Fallback to SIM-specific tariffs if operator tariffs are missing
+       print('Error: Standard tariff data not found for operator $callingSimOperator. Falling back to SIM tariffs.');
        final Map<String, dynamic>? simTariffs = tariffsData[callingSimId]?['tariffs_per_minute'];
        if (simTariffs == null) {
-          print('Error: Tariff data not found for $callingSimId');
-          return 999.0; // High cost indicating error
+          print('Error: Tariff data not found for $callingSimId either.');
+          return 999.0;
        }
        final String costKey = (destinationOperatorName == 'Unknown') ? 'Unknown' : destinationOperatorName;
        final double cost = (simTariffs[costKey] ?? simTariffs['Unknown'] ?? 999.0).toDouble();
+       print('Calculated cost (SIM fallback): $cost for $callingSimId to $destinationOperatorName ($destinationNumber)');
        return cost;
     }
 
-    // Get the cost for the destination operator from the standard operator tariffs
     final String costKey = (destinationOperatorName == 'Unknown') ? 'Unknown' : destinationOperatorName;
     final double cost = (operatorTariffs[costKey] ?? operatorTariffs['Unknown'] ?? 999.0).toDouble();
-
+    print('Calculated cost (Operator): $cost for $callingSimId ($callingSimOperator) to $destinationOperatorName ($destinationNumber)');
     return cost;
   }
 
 
   // --- Helper Functions ---
 
-  /// Helper function to get the operator name as a string.
   static String getOperatorName(AlgerianMobileOperator operator) {
     switch (operator) {
       case AlgerianMobileOperator.Djezzy:
@@ -140,15 +159,14 @@ class OperatorDetector {
     }
   }
 
-  /// Optional: Helper function to get a color associated with the operator.
   static Color getOperatorColor(AlgerianMobileOperator operator) {
     switch (operator) {
       case AlgerianMobileOperator.Djezzy:
-        return Colors.red; // Example color
+        return Colors.red;
       case AlgerianMobileOperator.Mobilis:
-        return Colors.blue; // Example color
+        return Colors.blue;
       case AlgerianMobileOperator.Ooredoo:
-        return Colors.orange; // Example color
+        return Colors.orange;
       default:
         return Colors.grey;
     }
