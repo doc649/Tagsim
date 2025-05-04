@@ -9,6 +9,7 @@ class ContactWithDetails {
   final String? countryFlagEmoji;
   final AlgerianMobileOperator operatorInfo;
   SimChoice? recommendedSim; // Added field for recommendation
+  String? recommendationError; // Added field for error message
 
   ContactWithDetails({
     required this.contact,
@@ -16,7 +17,8 @@ class ContactWithDetails {
     this.countryCode,
     this.countryFlagEmoji,
     this.operatorInfo = AlgerianMobileOperator.Unknown,
-    this.recommendedSim, // Added to constructor
+    this.recommendedSim,
+    this.recommendationError, // Added to constructor
   });
 }
 

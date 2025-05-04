@@ -114,7 +114,10 @@ class _ContactsScreenState extends State<ContactsScreen> {
 
                 print("Processing contact: ID=${contact.id}, Name=${contact.displayName}, Phone=$phoneNumber"); // Log processing
 
-                recommendation = await _recommender.getBestSim(phoneNumber);
+                // Get recommendation and potential error message
+                Map<SimChoice, String?> recommendationResult = await _recommender.getBestSim(phoneNumber);
+                SimChoice recommendation = recommendationResult.keys.first;
+                String? errorMsg = recommendationResult.values.first;
 
                 uniqueContacts[contact.id] = ContactWithDetails(
                   contact: contact,
@@ -123,6 +126,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
                   countryFlagEmoji: flagEmoji,
                   operatorInfo: operator,
                   recommendedSim: recommendation,
+                  recommendationError: errorMsg, // Store the error message
                 );
                  print("Added contact to map: ID=${contact.id}"); // Log addition
               } else {
@@ -210,7 +214,9 @@ class _ContactsScreenState extends State<ContactsScreen> {
     }
   }
 
-  Widget _buildRecommendationIndicator(SimChoice recommendation) {
+  Widget _buildRecommendationIndicator(ContactWithDetails details) {
+    SimChoice recommendation = details.recommendedSim ?? SimChoice.none;
+    String? errorMsg = details.recommendationError;
     IconData iconData;
     Color iconColor;
     String tooltip;
@@ -234,7 +240,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
       case SimChoice.error:
         iconData = Icons.error_outline;
         iconColor = Colors.orange;
-        tooltip = 'Erreur lors du calcul de la recommandation';
+        tooltip = errorMsg ?? 'Erreur lors du calcul de la recommandation'; // Use specific error message
         break;
     }
 
@@ -348,7 +354,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
                   child: Text(details.countryFlagEmoji!, style: const TextStyle(fontSize: 16)),
                 ),
               Expanded(child: Text(phoneNumber ?? 'Pas de numéro')),
-              _buildRecommendationIndicator(recommendation),
+              _buildRecommendationIndicator(details),
               if (logoPath != null)
                 Padding(
                   padding: const EdgeInsets.only(left: 8.0),

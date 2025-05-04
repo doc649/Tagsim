@@ -24,14 +24,15 @@ class SmartCallRecommender {
     _tariffs ??= await OperatorDetector.loadTariffs();
   }
 
-  // Main method to get the best SIM recommendation
-  Future<SimChoice> getBestSim(String destinationNumber) async {
+  // Main method to get the best SIM recommendation and potential error message
+  Future<Map<SimChoice, String?>> getBestSim(String destinationNumber) async {
     print("--- Calculating best SIM for $destinationNumber ---"); // Added log
     try {
       await _loadTariffsIfNeeded();
       if (_tariffs == null || _tariffs!.isEmpty) { // Check if tariffs are empty too
-        print("Error: Tariffs could not be loaded or are empty.");
-        return SimChoice.error;
+        String errorMsg = "Error: Tariffs could not be loaded or are empty.";
+        print(errorMsg);
+        return {SimChoice.error: errorMsg};
       }
       print("Tariffs loaded successfully."); // Added log
 
@@ -103,14 +104,13 @@ class SmartCallRecommender {
         result = SimChoice.none;
       }
       print("Recommendation result: $result"); // Added log
-      return result;
+      return {result: null}; // Return null error message on success
 
     } catch (e, stacktrace) { // Added stacktrace
-      print("Error calculating best SIM for $destinationNumber:");
-      print("Error Type: ${e.runtimeType}");
-      print("Error Message: $e");
+      String errorMsg = "Error calculating best SIM for $destinationNumber: $e";
+      print(errorMsg);
       print("Stacktrace:\n$stacktrace"); // Log stacktrace
-      return SimChoice.error;
+      return {SimChoice.error: errorMsg}; // Return error message
     }
   }
 
