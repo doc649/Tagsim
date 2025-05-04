@@ -200,7 +200,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
                 } else {
                   print("FETCH_CONTACTS:       Region info was null or had no isoCode");
                 }
-              } catch (e) {
+} catch (e, stacktrace) {
                 print('FETCH_CONTACTS:       Error getting region info for normalized number $normalizedNumber: $e');
                 if (normalizedNumber.startsWith('+213')) {
                    operator = OperatorDetector.detectOperator(normalizedNumber);
