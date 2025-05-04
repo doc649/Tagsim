@@ -392,13 +392,15 @@ class _ContactsScreenState extends State<ContactsScreen> {
                   padding: const EdgeInsets.only(right: 4.0),
                   child: Text(details.countryFlagEmoji!, style: const TextStyle(fontSize: 16)),
                 ),
+              // --- Corrected Subtitle Logic ---
               // Display normalized number in subtitle only if name is present
               if (contact.displayName.isNotEmpty)
                  Expanded(child: Text(phoneNumber ?? 'Numéro invalide')),
-              // If no name, the number is already in the title, so don't repeat in subtitle (or show something else)
+              // If no name, the number is already in the title, so don't repeat in subtitle
+              // We can show a placeholder or nothing
               if (contact.displayName.isEmpty)
-                 const Expanded(child: Text('(Numéro affiché comme nom)')), // Placeholder or empty
-
+                 const Expanded(child: SizedBox.shrink()), // Show nothing if name is empty
+              // -----------------------------------
               _buildRecommendationIndicator(details),
               if (logoPath != null)
                 Padding(
