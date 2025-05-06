@@ -1,104 +1,78 @@
-# Documentation Smart SIM DZ
+Plan d’évolution TagSim v2.5 (Branche : `gpt-pilot-dev`)
 
-Ce document fournit les informations nécessaires pour comprendre, compiler et modifier l'application Smart SIM DZ.
+## 🔧 Objectif général
 
-## 1. Prérequis
+Poursuivre le développement de l'application **TagSim** à partir de la branche `gpt-pilot-dev` (copie de `features-v2`), **sans casser la structure actuelle**.  
+Toutes les nouvelles fonctionnalités doivent être **offline**, **compatibles Android 9+**, **sans IA ni API externe**, et **en respectant le code source existant**.
 
-Pour compiler et exécuter ce projet, vous aurez besoin de :
+---
 
-*   **Flutter SDK:** Assurez-vous d'avoir installé Flutter sur votre machine. Suivez les instructions officielles : [https://docs.flutter.dev/get-started/install](https://docs.flutter.dev/get-started/install)
-*   **Android SDK:** Flutter nécessite l'Android SDK pour la compilation Android. Celui-ci est généralement installé avec Android Studio. Assurez-vous que les outils de ligne de commande (`cmdline-tools`) sont installés via le SDK Manager d'Android Studio.
-*   **Un éditeur de code:** Visual Studio Code avec l'extension Flutter est recommandé, mais Android Studio ou IntelliJ IDEA fonctionnent également.
-*   **Un appareil Android (ou émulateur):** Pour tester l'application (Android 7.0 Nougat - API 24 ou supérieur).
+## ✅ Fonctionnalités existantes à garder (à relire/améliorer si nécessaire)
 
-## 2. Configuration du projet
+- 📞 Détection automatique des opérateurs à partir des préfixes (Djezzy, Mobilis, Ooredoo)
+- 👥 Liste de contacts enrichie avec affichage par opérateur
+- 📊 Dashboard statistiques par carte SIM
+- 💬 Codes USSD : affichage et exécution pour chaque opérateur
+- 🌙 Mode sombre activable
+- 🛠️ Configuration manuelle des opérateurs si détection impossible
+- 📶 Comparateur simple d’offres mobile (à améliorer)
 
-1.  **Récupérer le code source:** Placez le dossier `smart_sim_dz` (que je vous fournirai) sur votre ordinateur.
-2.  **Ouvrir le projet:** Ouvrez le dossier `smart_sim_dz` dans votre éditeur de code (VS Code, Android Studio...). 
-3.  **Installer les dépendances:** Ouvrez un terminal à la racine du projet (`smart_sim_dz`) et exécutez la commande suivante :
-    ```bash
-    flutter pub get
-    ```
-    Cela téléchargera toutes les bibliothèques nécessaires définies dans `pubspec.yaml`.
+> 🛠 GPT Pilot doit :
+> - Lire et comprendre tout le code du projet
+> - Détecter les fonctions déjà existantes, même incomplètes
+> - Évaluer la qualité (structure, répétition, lisibilité)
+> - Corriger ou améliorer sans détruire la logique actuelle
+> - Ajouter uniquement des fonctions compatibles avec l'existant
 
-## 3. Compilation de l'APK
+---
 
-Une fois les dépendances installées, vous pouvez compiler l'APK.
+## 🆕 Fonctionnalités à ajouter dans cette version
 
-*   **Pour un test rapide (APK de débogage):**
-    ```bash
-    flutter build apk --debug
-    ```
-    L'APK se trouvera dans `build/app/outputs/flutter-apk/app-debug.apk`.
+### 📸 1. Scanner de bon de recharge offline (OCR sans internet)
+- Scan via caméra d’un bon de recharge imprimé
+- Détection automatique d’un code à 14 chiffres avec `google_mlkit_text_recognition`
+- Pré-remplissage du code dans une requête USSD (ex. : `*123*CODE#`)
+- Confirmation utilisateur avant envoi
 
-*   **Pour une version "Release" (APK optimisé):**
-    ```bash
-    flutter build apk --release
-    ```
-    L'APK se trouvera dans `build/app/outputs/flutter-apk/app-release.apk`. Cet APK est généralement non signé. Pour une distribution (par exemple sur le Play Store), vous devrez configurer la signature de l'application. Suivez les instructions officielles : [https://docs.flutter.dev/deployment/android#signing-the-app](https://docs.flutter.dev/deployment/android#signing-the-app)
+### 🔁 2. Rafraîchissement manuel du tableau de bord
+- Ajout d’un bouton « Rafraîchir maintenant »
+- Option de synchronisation automatique (si autorisation de l’utilisateur)
 
-## 4. Installation de l'APK
+### ⭐ 3. Fonction de favoris sur les offres
+- Ajout ou suppression d’une offre via une icône étoile
+- Onglet « Mes Offres » avec les favoris stockés localement
 
-1.  **Transférer l'APK:** Copiez le fichier `.apk` généré (par exemple `app-release.apk`) sur votre appareil Android.
-2.  **Autoriser les sources inconnues:** Sur votre appareil Android, allez dans les Paramètres -> Sécurité (ou Applications & notifications -> Accès spécial des applications -> Installation d'applis inconnues) et autorisez l'installation d'applications depuis votre gestionnaire de fichiers ou votre navigateur.
-3.  **Installer:** Ouvrez le fichier `.apk` via un gestionnaire de fichiers sur votre appareil et suivez les instructions pour l'installer.
+### 🔄 4. Comparateur automatique intelligent
+- Bouton « Comparer pour moi »
+- Analyse du profil d’utilisation (appels, SMS, data)
+- Suggestion automatique de la meilleure offre disponible
 
+### 🧮 5. Calculateur de consommation mobile
+- Formulaire simple (appels/jour, data/mois, etc.)
+- Résultat : liste d’offres pertinentes selon l’usage estimé
 
+---
 
+## 🎯 Objectif version v2.5
 
-## 5. Structure du Projet
+- App complètement utilisable sans internet
+- OCR de recharge fonctionnel
+- Favoris et suggestions activées
+- Interface stable et légère (Android 9 minimum)
+- Aucune dépendance IA ou serveur externe
 
-Le projet suit une structure Flutter standard, avec les répertoires clés suivants :
+---
 
-*   `/lib`: Contient tout le code source Dart de l'application.
-    *   `/main.dart`: Point d'entrée de l'application, initialise Flutter et AdMob, définit le thème.
-    *   `/screens`: Contient les différents écrans (widgets `Scaffold`) de l'application.
-        *   `home_screen.dart`: Écran principal affichant la liste des contacts, la recherche, le compteur d'économies, la bannière publicitaire et les boutons d'appel.
-        *   `settings_screen.dart`: Écran de configuration permettant d'assigner les opérateurs aux SIMs et de gérer le statut premium.
-    *   `/models`: Contient les modèles de données.
-        *   `contact_with_operator.dart`: Modèle combinant un `Contact` Flutter avec son `Operator` détecté.
-    *   `/utils`: Contient les fonctions utilitaires.
-        *   `operator_detector.dart`: Logique pour détecter l'opérateur basé sur le préfixe du numéro et pour obtenir le nom/couleur de l'opérateur.
-*   `/android`: Contient les fichiers spécifiques à la plateforme Android (configuration, `AndroidManifest.xml`, `build.gradle`).
-*   `/ios`: Contient les fichiers spécifiques à la plateforme iOS (non utilisé activement dans ce projet initial).
-*   `/assets`: Pourrait contenir des ressources statiques comme des images ou des polices (non utilisé dans cette version).
-*   `pubspec.yaml`: Fichier de configuration du projet Flutter, listant les dépendances, les ressources, etc.
-*   `README.md`: Ce fichier de documentation.
+## ⚠️ Contraintes techniques
 
-## 6. Modifications Courantes
+- ❌ Aucune API externe (pas de GPT, pas de backend)
+- ✅ Fonctionnement full offline
+- ✅ Optimisé pour Android 9+
+- ✅ Pas de refactor complet : structure `features-v2` conservée
+- ✅ Toutes les modifs dans la branche `gpt-pilot-dev` uniquement
 
-### a) Modifier les Préfixes Opérateurs
+---
 
-La logique de détection des opérateurs se trouve dans le fichier `lib/utils/operator_detector.dart`.
+## ✅ Statut
 
-Pour modifier ou ajouter des préfixes :
-
-1.  Ouvrez le fichier `lib/utils/operator_detector.dart`.
-2.  Localisez la fonction `detectOperator(String phoneNumber)`.
-3.  Modifiez les conditions `startsWith()` pour ajuster les préfixes existants ou ajoutez de nouvelles conditions pour de nouveaux opérateurs.
-    *Exemple : Si Djezzy utilise aussi le préfixe '078', ajoutez `|| cleanedNumber.startsWith("078")` à la condition pour `Operator.djezzy`.*
-4.  Si vous ajoutez un nouvel opérateur, vous devrez également :
-    *   Ajouter une valeur à l'énumération `Operator`.
-    *   Ajouter une couleur correspondante dans la fonction `getOperatorColor(Operator operator)`.
-    *   Ajouter un nom correspondant dans la fonction `getOperatorName(Operator operator)`.
-
-### b) Modifier les Textes de l'Application
-
-La plupart des textes visibles par l'utilisateur se trouvent directement dans les fichiers de widgets sous `/lib/screens` (`home_screen.dart`, `settings_screen.dart`). Recherchez le texte que vous souhaitez modifier et remplacez-le directement dans le code.
-
-*Pour une application multilingue (future évolution), il faudrait extraire ces chaînes dans des fichiers de localisation dédiés.*
-
-### c) Modifier les Informations de Paiement Premium
-
-Les instructions affichées pour obtenir la version premium (paiement manuel) se trouvent dans `lib/screens/settings_screen.dart`, dans la fonction `_requestPremium()`. Modifiez le texte dans `AlertDialog` pour mettre à jour le montant, la méthode de paiement ou les informations de contact.
-
-### d) Remplacer les ID AdMob de Test
-
-Avant de publier l'application, vous **devez** remplacer les ID AdMob de test par vos propres ID réels :
-
-1.  **ID d'Application AdMob :** Dans `/android/app/src/main/AndroidManifest.xml`, remplacez la valeur `android:value` pour `com.google.android.gms.ads.APPLICATION_ID`.
-2.  **ID de Bloc d'Annonces (Bannière) :** Dans `lib/screens/home_screen.dart`, modifiez la valeur de la variable `_adUnitId`.
-
-Créez ces ID depuis votre compte AdMob ([https://admob.google.com/](https://admob.google.com/)).
-
-
+Ce plan est actif et constitue la feuille de route pour GPT Pilot.
